@@ -1,0 +1,19 @@
+{
+  "appId": "com.dias.managementandplanning",
+  "productName": "MaP",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist-electron/**/*",
+    "electron/**/*",
+    "package.json"
+  ],
+  "win": {
+    "target": "nsis"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true
+  }
+}

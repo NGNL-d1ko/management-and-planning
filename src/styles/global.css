@@ -1,0 +1,1140 @@
+/* ================================================================
+   Load order in main.jsx:
+     1. bootstrap/dist/css/bootstrap.min.css
+     2. ./index.css          (theme tokens + Bootstrap variable overrides)
+     3. ./styles/global.css  ← this file
+   ================================================================ */
+
+/* ── 1. CSS Custom Properties ─────────────────────────────────── */
+
+:root,
+[data-theme='dark'] {
+  /* Public API – used across components */
+  --ym-primary:       var(--color-primary);
+  --ym-bg:            var(--color-bg-base);
+  --ym-sidebar-width: 280px;
+  --ym-card-radius:   12px;
+  --ym-transition:    0.18s ease;
+  --ym-border-color:  var(--color-border-default);
+
+  /* Private layout tokens */
+  --_brand-gradient:      linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  --_sidebar-bg:          #0d0f23;
+  --_sidebar-hover:       rgba(255, 255, 255, 0.042);
+  --_sidebar-active-bg:   rgba(99, 102, 241, 0.14);
+  --_sidebar-shadow:      2px 0 28px rgba(4, 5, 15, 0.45);
+  --_topbar-bg:           rgba(13, 14, 26, 0.82);
+  --_topbar-shadow:       0 1px 0 var(--color-border-subtle),
+                          0 4px 20px rgba(4, 5, 15, 0.24);
+  --_card-shadow:         0 2px 10px rgba(4, 5, 15, 0.24);
+  --_card-shadow-hover:   0 8px 30px rgba(99, 102, 241, 0.16);
+  --_table-head-bg:       var(--color-bg-surface);
+  --_kanban-col-bg:       var(--color-bg-surface);
+  --_auth-card-bg:        var(--color-bg-elevated);
+}
+
+[data-theme='light'] {
+  --_brand-gradient:      linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  --_sidebar-bg:          #ffffff;
+  --_sidebar-hover:       rgba(79, 70, 229, 0.042);
+  --_sidebar-active-bg:   rgba(79, 70, 229, 0.08);
+  --_sidebar-shadow:      2px 0 16px rgba(79, 70, 229, 0.07);
+  --_topbar-bg:           rgba(255, 255, 255, 0.90);
+  --_topbar-shadow:       0 1px 0 var(--color-border-default),
+                          0 2px 10px rgba(79, 70, 229, 0.05);
+  --_card-shadow:         0 1px 4px rgba(99, 102, 241, 0.07),
+                          0 1px 2px rgba(0, 0, 0, 0.04);
+  --_card-shadow-hover:   0 6px 24px rgba(79, 70, 229, 0.12);
+  --_table-head-bg:       #f6f7ff;
+  --_kanban-col-bg:       #f0f1fa;
+  --_auth-card-bg:        #ffffff;
+}
+
+
+/* ── 2. Base ──────────────────────────────────────────────────── */
+
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont,
+               "Helvetica Neue", Arial, sans-serif;
+  transition: background-color 0.25s ease, color 0.25s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Theme-switch transitions on structural elements only */
+.card,
+.modal-content,
+.dropdown-menu,
+.offcanvas,
+.ym-sidebar,
+.ym-topbar,
+header,
+aside {
+  transition: background-color var(--ym-transition),
+              border-color var(--ym-transition),
+              box-shadow var(--ym-transition);
+}
+
+
+/* ── 3. App Shell ─────────────────────────────────────────────── */
+
+/* Sticky sidebar — stays in viewport while content scrolls */
+@media (min-width: 992px) {
+  .min-vh-100.d-flex.bg-body > aside {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    flex-shrink: 0;
+    scrollbar-width: none; /* hide sidebar's own scrollbar */
+  }
+
+  .min-vh-100.d-flex.bg-body > aside::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+
+/* ── 4. Sidebar ───────────────────────────────────────────────── */
+
+.ym-sidebar {
+  background: var(--_sidebar-bg) !important;
+  box-shadow: var(--_sidebar-shadow);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ── Brand block ── */
+.ym-sidebar-brand {
+  padding: 1.25rem 1.5rem 1.1rem;
+  border-bottom: 1px solid var(--ym-border-color);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* Soft ambient glow behind the brand */
+.ym-sidebar-brand::before {
+  content: '';
+  position: absolute;
+  top: -48px;
+  left: -48px;
+  width: 130px;
+  height: 130px;
+  background: var(--_brand-gradient);
+  border-radius: 50%;
+  opacity: 0.08;
+  pointer-events: none;
+  filter: blur(20px);
+}
+
+/* Gradient text for "your MaP" */
+.ym-brand-name {
+  font-size: 1.2rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 0.15rem;
+  background: var(--_brand-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent; /* fallback */
+}
+
+.ym-brand-sub {
+  font-size: 0.68rem !important;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-text-muted) !important;
+}
+
+/* ── Nav section ── */
+.ym-sidebar-nav {
+  padding: 0.6rem;
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-default) transparent;
+}
+
+.ym-sidebar-nav::-webkit-scrollbar { width: 3px; }
+.ym-sidebar-nav::-webkit-scrollbar-thumb {
+  background: var(--color-border-default);
+  border-radius: 2px;
+}
+
+.ym-sidebar-nav .nav-link {
+  border-radius: 8px;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary) !important;
+  position: relative;
+  transition: background-color var(--ym-transition), color var(--ym-transition);
+}
+
+.ym-sidebar-nav .nav-link:hover {
+  background-color: var(--_sidebar-hover) !important;
+  color: var(--color-text-primary) !important;
+}
+
+/* Active state — override Bootstrap bg-primary + text-white */
+.ym-sidebar-nav .nav-link.bg-primary {
+  background-color: var(--_sidebar-active-bg) !important;
+  color: var(--ym-primary) !important;
+  font-weight: 600;
+}
+
+/* Active left-border accent */
+.ym-sidebar-nav .nav-link.bg-primary::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 56%;
+  background: var(--ym-primary);
+  border-radius: 0 3px 3px 0;
+}
+
+/* Icon inside nav link */
+.ym-sidebar-nav .nav-link svg {
+  flex-shrink: 0;
+  opacity: 0.75;
+  transition: opacity var(--ym-transition);
+}
+
+.ym-sidebar-nav .nav-link:hover svg,
+.ym-sidebar-nav .nav-link.bg-primary svg {
+  opacity: 1;
+}
+
+
+/* ── 5. Topbar ────────────────────────────────────────────────── */
+
+.ym-topbar {
+  background: var(--_topbar-bg) !important;
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  box-shadow: var(--_topbar-shadow) !important;
+  border-bottom: 1px solid var(--ym-border-color) !important;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  min-height: 60px;
+}
+
+/* Page title in topbar */
+.ym-topbar .h5 {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* Subtext "your MaP" in topbar */
+.ym-topbar .small.text-muted {
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* User menu toggle */
+.ym-topbar .dropdown-toggle {
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+
+
+/* ── 6. Cards ─────────────────────────────────────────────────── */
+
+.card {
+  border-radius: var(--ym-card-radius) !important;
+  box-shadow: var(--_card-shadow) !important;
+  border: 1px solid var(--ym-border-color) !important;
+}
+
+.card-header {
+  border-radius: var(--ym-card-radius) var(--ym-card-radius) 0 0 !important;
+}
+
+/* Interactive (clickable) card hover lift */
+.card[role="button"] {
+  transition: box-shadow var(--ym-transition), transform var(--ym-transition),
+              border-color var(--ym-transition) !important;
+}
+
+.card[role="button"]:hover {
+  box-shadow: var(--_card-shadow-hover) !important;
+  border-color: var(--color-border-strong) !important;
+  transform: translateY(-2px);
+}
+
+.card[role="button"]:active {
+  transform: translateY(0);
+}
+
+/* Kanban draggable cards: suppress transform (interferes with dnd-kit) */
+.ym-kanban-wrapper .card[role="button"]:hover {
+  transform: none !important;
+}
+
+
+/* ── 7. Buttons ───────────────────────────────────────────────── */
+
+.btn {
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  letter-spacing: 0.01em;
+  transition: background-color var(--ym-transition),
+              border-color var(--ym-transition),
+              box-shadow var(--ym-transition),
+              transform var(--ym-transition),
+              color var(--ym-transition);
+}
+
+.btn-sm {
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+
+.btn-lg {
+  border-radius: 10px;
+}
+
+.btn-primary {
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.28) !important;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.40) !important;
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(99, 102, 241, 0.20) !important;
+}
+
+[data-theme='light'] .btn-primary {
+  box-shadow: 0 1px 4px rgba(79, 70, 229, 0.22) !important;
+}
+
+[data-theme='light'] .btn-primary:hover {
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.30) !important;
+}
+
+/* Outline buttons: consistent border-radius already from .btn */
+.btn-outline-primary:hover,
+.btn-outline-secondary:hover,
+.btn-outline-danger:hover {
+  transform: translateY(-1px);
+}
+
+.btn-outline-primary:active,
+.btn-outline-secondary:active,
+.btn-outline-danger:active {
+  transform: translateY(0);
+}
+
+
+/* ── 8. Forms ─────────────────────────────────────────────────── */
+
+.form-label {
+font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary) !important;
+  margin-bottom: 0.35rem;
+}
+
+.form-control,
+.form-select {
+  border-radius: 8px;
+  font-size: 0.875rem;
+  padding: 0.48rem 0.8rem;
+  border: 1px solid var(--ym-border-color);
+  transition: border-color var(--ym-transition),
+              box-shadow var(--ym-transition),
+              background-color var(--ym-transition);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--ym-primary) !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.14) !important;
+}
+
+[data-theme='light'] .form-control:focus,
+[data-theme='light'] .form-select:focus {
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12) !important;
+}
+
+.form-control.is-valid { border-color: var(--color-success) !important; }
+.form-control.is-invalid { border-color: var(--color-danger) !important; }
+
+.invalid-feedback { font-size: 0.78rem; }
+.valid-feedback   { font-size: 0.78rem; }
+
+/* Input groups: rounded edges */
+.input-group > .form-control:first-child,
+.input-group > .form-select:first-child {
+  border-radius: 8px 0 0 8px;
+}
+
+.input-group > .form-control:last-child,
+.input-group > .form-select:last-child {
+  border-radius: 0 8px 8px 0;
+}
+
+.input-group > .input-group-text:first-child {
+  border-radius: 8px 0 0 8px;
+}
+
+.input-group > .input-group-text:last-child {
+  border-radius: 0 8px 8px 0;
+}
+
+.input-group > .btn:first-child { border-radius: 8px 0 0 8px; }
+.input-group > .btn:last-child  { border-radius: 0 8px 8px 0; }
+
+
+/* ── 9. Tables ────────────────────────────────────────────────── */
+
+.table-responsive {
+  border-radius: var(--ym-card-radius);
+  overflow: hidden;
+}
+
+.table {
+  font-size: 0.875rem;
+  margin-bottom: 0;
+}
+
+.table thead th {
+  background-color: var(--_table-head-bg) !important;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary) !important;
+  border-bottom: 1px solid var(--ym-border-color) !important;
+  padding: 0.75rem 1rem;
+  white-space: nowrap;
+}
+
+.table tbody td {
+  padding: 0.7rem 1rem;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--ym-border-color);
+  color: var(--color-text-primary);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table-hover tbody tr {
+  transition: background-color var(--ym-transition);
+}
+
+.table-hover tbody tr:hover td {
+  background-color: var(--color-table-row-hover);
+}
+
+
+/* ── 10. Badges ───────────────────────────────────────────────── */
+
+.badge {
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.3em 0.65em;
+  letter-spacing: 0.02em;
+}
+
+
+/* ── 11. Kanban Board ─────────────────────────────────────────── */
+
+.ym-kanban-wrapper {
+  overflow-x: auto;
+  overflow-y: visible;
+  padding-bottom: 1rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-default) transparent;
+}
+
+.ym-kanban-wrapper::-webkit-scrollbar { height: 5px; }
+.ym-kanban-wrapper::-webkit-scrollbar-track { background: transparent; }
+.ym-kanban-wrapper::-webkit-scrollbar-thumb {
+  background: var(--color-border-default);
+  border-radius: 3px;
+}
+.ym-kanban-wrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-strong);
+}
+
+/* Kanban inner row: min-height + gap */
+.ym-kanban-wrapper > .d-flex {
+  min-height: 520px;
+  gap: 1rem !important;
+  padding-bottom: 0.5rem;
+}
+
+/* ── Column card ── */
+.ym-kanban-wrapper .card.h-100 {
+  background-color: var(--_kanban-col-bg) !important;
+  border: 1px solid var(--ym-border-color) !important;
+  border-radius: var(--ym-card-radius) !important;
+  box-shadow: none !important;
+  min-width: 300px;
+  max-width: 340px;
+  transform: none !important; /* columns don't lift */
+}
+
+/* Drag-over column highlight */
+.ym-kanban-wrapper .bg-primary-subtle {
+  background-color: var(--color-primary-muted) !important;
+  border-color: var(--color-primary-border) !important;
+}
+
+/* Column header */
+.ym-kanban-wrapper .card-header {
+  background: transparent !important;
+  border-bottom: 1px solid var(--ym-border-color) !important;
+  border-radius: var(--ym-card-radius) var(--ym-card-radius) 0 0 !important;
+  padding: 0.75rem 1rem;
+}
+
+/* Column task count badge */
+.ym-kanban-wrapper .card-header .badge {
+  font-size: 0.68rem;
+  padding: 0.2em 0.55em;
+}
+
+/* Quick-add input strip */
+.ym-kanban-wrapper .input-group .form-control {
+  border-radius: 6px 0 0 6px;
+  font-size: 0.82rem;
+  padding: 0.4rem 0.65rem;
+}
+.ym-kanban-wrapper .input-group .btn {
+  border-radius: 0 6px 6px 0;
+  padding: 0.4rem 0.65rem;
+}
+
+/* ── KanbanCard (inner .card, no h-100) ── */
+.ym-kanban-wrapper .card.h-100 .card {
+  background-color: var(--color-bg-elevated) !important;
+  border: 1px solid var(--ym-border-color) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  cursor: grab;
+  transition: box-shadow var(--ym-transition),
+              border-color var(--ym-transition);
+}
+
+.ym-kanban-wrapper .card.h-100 .card:hover {
+  box-shadow: var(--_card-shadow-hover) !important;
+  border-color: var(--color-border-strong) !important;
+}
+
+/* Dragging: dnd-kit sets opacity inline (0.55) — add ring */
+.ym-kanban-wrapper .card.h-100 .card[style*="opacity: 0.55"],
+.ym-kanban-wrapper .card.h-100 .card[style*="opacity:0.55"] {
+  box-shadow: 0 0 0 2px var(--ym-primary),
+              0 12px 32px rgba(99, 102, 241, 0.28) !important;
+  border-color: var(--ym-primary) !important;
+}
+
+/* EmptyState inside a Kanban column */
+.ym-kanban-wrapper .card.h-100 .text-center.border.rounded-3 {
+  border-style: dashed !important;
+  font-size: 0.82rem;
+  padding: 2rem 0.75rem !important;
+}
+
+
+/* ── 12. Calendar ─────────────────────────────────────────────── */
+/* These extend calendar.css (which handles base .map-calendar) */
+
+.map-calendar {
+  border-radius: var(--ym-card-radius);
+}
+
+.map-calendar .rbc-calendar {
+  font-family: inherit;
+  color: var(--color-text-primary);
+}
+
+/* Toolbar */
+.map-calendar .rbc-toolbar {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.25rem 0 0.75rem;
+}
+
+.map-calendar .rbc-toolbar-label {
+  font-size: 0.975rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.map-calendar .rbc-btn-group button {
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 0.32rem 0.75rem;
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--ym-border-color);
+  transition: all var(--ym-transition);
+}
+
+.map-calendar .rbc-btn-group button:hover {
+  background-color: var(--color-bg-overlay);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-strong);
+}
+
+.map-calendar .rbc-btn-group button.rbc-active,
+.map-calendar .rbc-btn-group button:active {
+  background-color: var(--ym-primary) !important;
+  border-color: var(--ym-primary) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.32);
+}
+
+/* Month/week grid container */
+.map-calendar .rbc-month-view,
+.map-calendar .rbc-time-view,
+.map-calendar .rbc-agenda-view {
+  border: 1px solid var(--ym-border-color);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--color-bg-elevated);
+}
+
+/* Day-of-week header row */
+.map-calendar .rbc-header {
+  background-color: var(--_table-head-bg) !important;
+  border-bottom: 1px solid var(--ym-border-color);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+  padding: 0.5rem 0.4rem;
+}
+
+.map-calendar .rbc-header + .rbc-header {
+  border-left: 1px solid var(--ym-border-color);
+}
+
+/* Off-range days */
+.map-calendar .rbc-off-range-bg {
+  background-color: var(--color-bg-surface);
+}
+
+/* Today highlight */
+.map-calendar .rbc-today {
+  background-color: var(--color-today-highlight);
+}
+
+/* Grid lines */
+.map-calendar .rbc-day-bg + .rbc-day-bg,
+.map-calendar .rbc-month-row + .rbc-month-row {
+  border-left: 1px solid var(--ym-border-color);
+}
+
+.map-calendar .rbc-month-row {
+  border-top: 1px solid var(--ym-border-color);
+}
+
+/* Date number */
+.map-calendar .rbc-date-cell {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.45rem;
+  color: var(--color-text-secondary);
+}
+
+.map-calendar .rbc-date-cell.rbc-now {
+  color: var(--ym-primary);
+}
+
+/* Events */
+.map-calendar .rbc-event {
+  border-radius: 5px !important;
+  font-size: 0.77rem;
+  border-left-width: 3px !important;
+  border-top: none !important;
+  border-right: none !important;
+  border-bottom: none !important;
+  padding: 2px 5px;
+}
+
+.map-calendar .rbc-event:focus,
+.map-calendar .rbc-event:focus-visible {
+  outline: 2px solid var(--ym-primary);
+  outline-offset: 1px;
+}
+
+/* "show more" link */
+.map-calendar .rbc-show-more {
+  font-size: 0.72rem;
+  color: var(--ym-primary);
+  font-weight: 600;
+}
+
+/* Agenda view */
+.map-calendar .rbc-agenda-view table {
+  font-size: 0.875rem;
+}
+
+.map-calendar .rbc-agenda-view table thead tr th {
+  background: var(--_table-head-bg);
+  color: var(--color-text-secondary);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--ym-border-color);
+  padding: 0.6rem 1rem;
+}
+
+.map-calendar .rbc-agenda-view table tbody tr {
+  border-bottom: 1px solid var(--ym-border-color);
+  transition: background-color var(--ym-transition);
+}
+
+.map-calendar .rbc-agenda-view table tbody tr:hover {
+  background-color: var(--color-bg-surface);
+}
+
+.map-calendar .rbc-agenda-empty {
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: 2.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+/* Time grid */
+.map-calendar .rbc-time-header-content,
+.map-calendar .rbc-time-content {
+  border-left: 1px solid var(--ym-border-color);
+}
+
+.map-calendar .rbc-timeslot-group {
+  border-bottom: 1px solid var(--ym-border-color);
+  min-height: 36px;
+}
+
+.map-calendar .rbc-label {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  padding: 0 0.5rem;
+}
+
+.map-calendar .rbc-current-time-indicator {
+  background-color: var(--ym-primary);
+  opacity: 0.7;
+}
+
+
+/* ── 13. Analytics ────────────────────────────────────────────── */
+
+/* Top accent stripe on summary stat cards */
+.analytics-stat-card {
+  border-top: 3px solid var(--ym-primary) !important;
+  overflow: hidden;
+}
+
+/* The rounded icon badge already uses Bootstrap variant colors; just ensure radius */
+.rounded-circle.p-3 {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Chart card: uniform padding */
+.card .recharts-responsive-container {
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* ProductivityStats list: subtle dividers */
+.card .list-group-item {
+  font-size: 0.875rem;
+}
+
+.card .list-group-item .text-muted {
+  font-size: 0.82rem;
+}
+
+.card .list-group-item .fw-semibold {
+  font-size: 0.9rem;
+}
+
+
+/* ── 14. Auth Pages (Login / Register) ────────────────────────── */
+
+/* Full-screen background: theme-aware + ambient blobs */
+.min-vh-100.d-flex.align-items-center.justify-content-center {
+  background: var(--ym-bg) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ambient gradient blobs */
+.min-vh-100.d-flex.align-items-center.justify-content-center::before,
+.min-vh-100.d-flex.align-items-center.justify-content-center::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  background: var(--_brand-gradient);
+}
+
+.min-vh-100.d-flex.align-items-center.justify-content-center::before {
+  top: -18%;
+  left: -8%;
+  width: 55%;
+  height: 55%;
+  opacity: 0.06;
+  filter: blur(55px);
+}
+
+.min-vh-100.d-flex.align-items-center.justify-content-center::after {
+  bottom: -18%;
+  right: -8%;
+  width: 48%;
+  height: 48%;
+  opacity: 0.04;
+  filter: blur(70px);
+}
+
+/* Auth card */
+.min-vh-100.d-flex.align-items-center.justify-content-center .card {
+  border-radius: 16px !important;
+  background: var(--_auth-card-bg) !important;
+  border: 1px solid var(--ym-border-color) !important;
+  box-shadow: 0 8px 40px rgba(4, 5, 15, 0.28) !important;
+  position: relative;
+  z-index: 1;
+}
+
+[data-theme='light']
+.min-vh-100.d-flex.align-items-center.justify-content-center .card {
+  box-shadow: 0 4px 24px rgba(79, 70, 229, 0.10),
+              0 1px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Gradient brand heading on auth pages */
+.min-vh-100.d-flex.align-items-center.justify-content-center .h3.fw-bold {
+  background: var(--_brand-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 800 !important;
+  font-size: 1.6rem !important;
+  letter-spacing: -0.02em;
+}
+
+/* Subtitle on auth pages */
+.min-vh-100.d-flex.align-items-center.justify-content-center .text-muted {
+  font-size: 0.82rem;
+}
+
+
+/* ── 15. UI Component Polish ──────────────────────────────────── */
+
+/* Breadcrumbs */
+.breadcrumb {
+  font-size: 0.78rem;
+  margin-bottom: 0;
+}
+
+.breadcrumb-item a {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: color var(--ym-transition);
+}
+
+.breadcrumb-item a:hover {
+  color: var(--ym-primary);
+}
+
+.breadcrumb-item.active {
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+  color: var(--color-text-muted);
+}
+
+/* Modals */
+.modal-content {
+  border-radius: 14px !important;
+  border: 1px solid var(--ym-border-color) !important;
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--ym-border-color);
+}
+
+.modal-body {
+  padding: 1.25rem 1.5rem;
+}
+
+.modal-footer {
+  padding: 0.85rem 1.5rem;
+  border-top: 1px solid var(--ym-border-color);
+  gap: 0.5rem;
+}
+
+/* Dropdown menus */
+.dropdown-menu {
+  border-radius: 10px !important;
+  border: 1px solid var(--ym-border-color) !important;
+  box-shadow: 0 10px 30px rgba(4, 5, 15, 0.20),
+              0 2px 6px rgba(4, 5, 15, 0.12) !important;
+  padding: 0.3rem;
+  overflow: hidden;
+}
+
+[data-theme='light'] .dropdown-menu {
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.10),
+              0 1px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+.dropdown-item {
+  border-radius: 6px;
+  font-size: 0.875rem;
+  padding: 0.42rem 0.75rem;
+  transition: background-color var(--ym-transition), color var(--ym-transition);
+}
+
+.dropdown-divider {
+  margin: 0.3rem 0;
+}
+
+.dropdown-header {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted) !important;
+  padding: 0.35rem 0.75rem 0.2rem;
+}
+
+/* Toasts */
+.toast {
+  border-radius: 10px !important;
+  border: 1px solid var(--ym-border-color) !important;
+  box-shadow: 0 8px 28px rgba(4, 5, 15, 0.22),
+              0 2px 8px rgba(4, 5, 15, 0.10) !important;
+  font-size: 0.875rem;
+  overflow: hidden;
+}
+
+.toast-header {
+  background: transparent;
+  border-bottom: 1px solid var(--ym-border-color);
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
+/* Empty state */
+.text-center.border.rounded-3.py-5.px-3.bg-body-tertiary {
+  border: 1px dashed var(--ym-border-color) !important;
+  border-radius: var(--ym-card-radius) !important;
+  transition: border-color var(--ym-transition);
+}
+
+/* List group items */
+.list-group-item {
+  background-color: transparent;
+  border-color: var(--ym-border-color);
+  transition: background-color var(--ym-transition);
+}
+
+/* Progress bars */
+.progress {
+  border-radius: 999px;
+  overflow: hidden;
+  background-color: var(--color-bg-overlay);
+}
+
+.progress-bar {
+  border-radius: 999px;
+  transition: width 0.6s ease;
+}
+
+/* Alerts: consistent radius */
+.alert {
+  border-radius: 10px !important;
+  font-size: 0.875rem;
+}
+
+/* Alert success */
+.alert-success {
+  --bs-alert-color: var(--color-success);
+  --bs-alert-bg: var(--color-success-muted);
+  --bs-alert-border-color: var(--color-success-border);
+}
+
+/* Offcanvas (mobile sidebar container) */
+.offcanvas {
+  border-right: 1px solid var(--ym-border-color) !important;
+}
+
+
+/* ── 16. Responsive ───────────────────────────────────────────── */
+
+/* ≥ 992px — desktop: already handled by sticky aside above */
+
+/* < 992px — tablet and below */
+@media (max-width: 991.98px) {
+  .ym-topbar {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  /* Kanban: extend edge-to-edge for more horizontal room */
+  .ym-kanban-wrapper {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Cards in project grid stack to 2 cols (Bootstrap handles via Col props) */
+}
+
+/* < 768px — mobile */
+@media (max-width: 767.98px) {
+  .ym-kanban-wrapper > .d-flex {
+    min-height: 420px;
+  }
+
+  .ym-kanban-wrapper .card.h-100 {
+    min-width: 260px;
+    max-width: 300px;
+  }
+
+  /* Table: tighten cells */
+  .table { font-size: 0.8rem; }
+  .table thead th { padding: 0.6rem 0.75rem; }
+  .table tbody td { padding: 0.55rem 0.75rem; }
+
+  /* Calendar: compact height */
+  .map-calendar {
+    min-height: 460px;
+    padding: 0.5rem;
+  }
+
+  .map-calendar .rbc-calendar {
+    min-height: 420px;
+  }
+
+  /* Modal: less horizontal margin */
+  .modal-dialog { margin: 0.5rem; }
+
+  /* Content area: reduce horizontal padding */
+  main {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    padding-top: 1rem !important;
+  }
+
+  /* Topbar: compact page title */
+  .ym-topbar .h5 { font-size: 1rem; }
+}
+
+/* < 576px — small mobile */
+@media (max-width: 575.98px) {
+  .ym-kanban-wrapper .card.h-100 {
+    min-width: 240px;
+    max-width: 280px;
+  }
+
+  /* Auth card: full-width with margin */
+  .min-vh-100.d-flex.align-items-center.justify-content-center .card {
+    margin: 1rem 0;
+  }
+
+  /* Dashboard stat row: full width per card */
+  .row.g-3 > [class*="col-"] {
+    padding: 0.35rem;
+  }
+
+  /* Breadcrumb: compact */
+  .breadcrumb { font-size: 0.72rem; }
+}
+
+
+/* ── 17. Focus / Accessibility ────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--ym-primary) !important;
+  outline-offset: 2px;
+}
+
+.btn:focus-visible,
+.nav-link:focus-visible,
+.dropdown-item:focus-visible {
+  outline: 2px solid var(--ym-primary) !important;
+  outline-offset: 2px;
+  box-shadow: none !important;
+}
+
+/* Keyboard nav for Kanban cards */
+.card[role="button"]:focus-visible {
+  outline: 2px solid var(--ym-primary) !important;
+  outline-offset: 2px;
+}
+
+
+/* ── 18. Print ────────────────────────────────────────────────── */
+
+@media print {
+  .ym-sidebar,
+  .ym-topbar,
+  .btn:not(.btn-link),
+  .dropdown,
+  .breadcrumb,
+  .toast-container {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .card {
+    break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #d0d0d0 !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 12pt;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: #000 !important;
+    -webkit-text-fill-color: #000 !important; /* reset gradient text for print */
+  }
+}
