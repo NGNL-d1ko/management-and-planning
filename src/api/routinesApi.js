@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabaseClient';
 
 const DEFAULT_PRIORITY = 'medium';
 const DEFAULT_SCHEDULE = 'daily';
+let generationPromise = null;
 
 const getToday = () => new Date().toISOString().slice(0, 10);
 
@@ -19,6 +20,11 @@ const addDays = (dateString, days) => {
   date.setDate(date.getDate() + days);
   return toDateString(date);
 };
+
+const maxDateString = (...dateStrings) => dateStrings
+  .filter(Boolean)
+  .sort()
+  .at(-1);
 
 const getDaysInMonth = (year, monthIndex) => new Date(year, monthIndex + 1, 0).getDate();
 
@@ -105,6 +111,10 @@ const getFirstDueOnOrAfter = (routine, fromDateString) => {
   return dueDate;
 };
 
+const getFirstDueAfter = (routine, fromDateString) => (
+  getFirstDueOnOrAfter(routine, addDays(fromDateString, 1))
+);
+
 const getNextDueAfter = (routine, dueDateString) => {
   if (routine.schedule === 'interval') {
     return addDays(dueDateString, Math.max(Number(routine.interval_days || 1), 1));
@@ -168,6 +178,7 @@ const normalizeRoutine = (data, userId, currentRoutine = null) => {
 const updateRoutineCompletion = (routine, task) => {
   const completedDate = task.completed_at?.slice(0, 10) || getToday();
   const previousDueDate = routine.active_due_date || task.due_date || routine.next_due_date || completedDate;
+  const nextScheduleBaseDate = maxDateString(previousDueDate, completedDate);
   const expectedPreviousCompletion = routine.last_completed_date
     ? getNextDueAfter(routine, routine.last_completed_date)
     : null;
@@ -180,7 +191,7 @@ const updateRoutineCompletion = (routine, task) => {
     last_completed_date: previousDueDate,
     last_completed_at: task.completed_at || getTimestamp(),
     streak: keepsStreak ? (routine.streak || 0) + 1 : 1,
-    next_due_date: getNextDueAfter(routine, previousDueDate),
+    next_due_date: getFirstDueAfter(routine, nextScheduleBaseDate),
     updated_at: getTimestamp(),
   };
 };
@@ -237,7 +248,7 @@ export const deleteRoutine = async (routineId) => {
   return { id: routineId };
 };
 
-export const generateDueRoutineTasks = async () => {
+const generateDueRoutineTasksInternal = async () => {
   const userId = await getCurrentUserId();
   const today = getToday();
   const routines = getStoredRoutines();
@@ -265,11 +276,12 @@ export const generateDueRoutineTasks = async () => {
         nextRoutine = updateRoutineCompletion(nextRoutine, activeTask);
       } else {
         const skippedDueDate = nextRoutine.active_due_date || nextRoutine.next_due_date || today;
+        const nextScheduleBaseDate = maxDateString(skippedDueDate, today);
         nextRoutine = {
           ...nextRoutine,
           active_task_id: null,
           active_due_date: null,
-          next_due_date: getNextDueAfter(nextRoutine, skippedDueDate),
+          next_due_date: getFirstDueAfter(nextRoutine, nextScheduleBaseDate),
           updated_at: getTimestamp(),
         };
       }
@@ -308,4 +320,16 @@ export const generateDueRoutineTasks = async () => {
   }
 
   return generatedTasks;
+};
+
+export const generateDueRoutineTasks = async () => {
+  if (generationPromise) {
+    return generationPromise;
+  }
+
+  generationPromise = generateDueRoutineTasksInternal().finally(() => {
+    generationPromise = null;
+  });
+
+  return generationPromise;
 };
