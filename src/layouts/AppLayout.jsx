@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Offcanvas } from 'react-bootstrap';
 import { Outlet, useLocation } from 'react-router-dom';
-import AppBreadcrumbs from '../components/layout/AppBreadcrumbs';
-import Sidebar from '../components/layout/Sidebar';
-import Topbar from '../components/layout/Topbar';
-import { navigationItems } from '../components/layout/navigationItems';
+import AppBreadcrumbs from '../components/Layout/AppBreadcrumbs';
+import Sidebar from '../components/Layout/Sidebar';
+import Topbar from '../components/Layout/Topbar';
+import { navigationItems } from '../components/Layout/navigationItems';
 import ErrorBoundary from '../components/ui/ErrorBoundary';
 import useAppDataPreload from '../hooks/useAppDataPreload';
 import useRoutineGeneration from '../hooks/useRoutineGeneration';
