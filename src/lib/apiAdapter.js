@@ -1,4 +1,4 @@
-﻿// API adapter that uses local storage when Supabase is not configured
+// API adapter that uses local storage when Supabase is not configured
 import { localStorage, STORAGE_KEYS, generateId, getTimestamp } from './localStorage';
 import { DEFAULT_USER } from './demoData';
 import { getSupabaseConfigStatus } from './supabaseClient';
@@ -59,13 +59,12 @@ export const notifyAuthListeners = (event, session) => {
   });
 };
 
-// Local Auth API
 export const localAuthApi = {
   signUp: async ({ email, password, options }) => {
     const users = localStorage.get(STORAGE_KEYS.USERS) || [];
     const existingUser = users.find((user) => user.email === email);
     if (existingUser) {
-      throw new Error('Пользователь с таким email уже существует');
+      throw new Error('Аккаунт с таким email уже существует. Войдите или восстановите пароль.');
     }
 
     const user = {
@@ -93,7 +92,7 @@ export const localAuthApi = {
     const currentUser = localStorage.get(STORAGE_KEYS.USER);
     const user = users.find((storedUser) => storedUser.email === email) ||
       (currentUser?.email === email ? currentUser : null);
-    
+
     if (!user) {
       throw new Error('Неверный email или пароль');
     }
@@ -144,6 +143,28 @@ export const localAuthApi = {
     return updatedUser;
   },
 
+  updatePassword: async (password) => {
+    const user = localStorage.get(STORAGE_KEYS.USER);
+    if (!user) throw new Error('Пользователь не авторизован');
+
+    const updatedUser = {
+      ...user,
+      password,
+    };
+
+    const users = localStorage.get(STORAGE_KEYS.USERS) || [];
+    localStorage.set(
+      STORAGE_KEYS.USERS,
+      users.map((storedUser) => (storedUser.id === updatedUser.id ? updatedUser : storedUser)),
+    );
+    localStorage.set(STORAGE_KEYS.USER, updatedUser);
+    const session = localStorage.get(STORAGE_KEYS.SESSION);
+    if (session) localStorage.set(STORAGE_KEYS.SESSION, { ...session, user: updatedUser });
+
+    notifyAuthListeners('USER_UPDATED', updatedUser);
+    return updatedUser;
+  },
+
   onAuthStateChange: (callback) => {
     const id = Date.now().toString();
     authListeners.push({ id, callback });
@@ -151,71 +172,6 @@ export const localAuthApi = {
   },
 };
 
-// Local Projects API
-export const localProjectsApi = {
-  getUser: async () => getCurrentLocalUser(),
-
-  getProjects: async () => {
-    const projects = localStorage.get(STORAGE_KEYS.PROJECTS) || [];
-    return projects.filter((project) => belongsToCurrentUser(project) && project.status !== 'archived');
-  },
-
-  getProject: async (id) => {
-    const projects = localStorage.get(STORAGE_KEYS.PROJECTS) || [];
-    const project = projects.find((item) => item.id === id && belongsToCurrentUser(item));
-    if (!project) throw new Error('Проект не найден');
-
-    const tasks = localStorage.get(STORAGE_KEYS.TASKS) || [];
-    const projectTasks = tasks.filter((task) => task.project_id === id && belongsToCurrentUser(task));
-
-    return {
-      ...project,
-      tasks: projectTasks,
-      taskCount: projectTasks.length,
-      completedTaskCount: projectTasks.filter((t) => t.status === 'done').length,
-    };
-  },
-
-  createProject: async (data) => {
-    const projects = localStorage.get(STORAGE_KEYS.PROJECTS) || [];
-    const userId = getCurrentLocalUserId();
-
-    const newProject = {
-      id: generateId(),
-      ...data,
-      user_id: userId,
-      status: 'active',
-      color: data.color || '#4A90D9',
-      created_at: getTimestamp(),
-      updated_at: getTimestamp(),
-    };
-
-    projects.push(newProject);
-    localStorage.set(STORAGE_KEYS.PROJECTS, projects);
-    return { ...newProject, taskCount: 0, completedTaskCount: 0 };
-  },
-
-  updateProject: async (id, data) => {
-    const projects = localStorage.get(STORAGE_KEYS.PROJECTS) || [];
-    const index = projects.findIndex((project) => project.id === id && belongsToCurrentUser(project));
-    if (index === -1) throw new Error('Проект не найден');
-
-    const updated = { ...projects[index], ...data, updated_at: getTimestamp() };
-    projects[index] = updated;
-    localStorage.set(STORAGE_KEYS.PROJECTS, projects);
-    return updated;
-  },
-
-  archiveProject: async (id) => localProjectsApi.updateProject(id, { status: 'archived' }),
-
-  deleteProject: async (id) => {
-    const projects = localStorage.get(STORAGE_KEYS.PROJECTS) || [];
-    localStorage.set(STORAGE_KEYS.PROJECTS, projects.filter((project) => !(project.id === id && belongsToCurrentUser(project))));
-    return { id };
-  },
-};
-
-// Local Tasks API
 export const localTasksApi = {
   getTasks: async (projectId, filters = {}) => {
     let tasks = (localStorage.get(STORAGE_KEYS.TASKS) || []).filter(belongsToCurrentUser);
@@ -273,6 +229,7 @@ export const localTasksApi = {
       status: data.status || 'todo',
       priority: data.priority || 'medium',
       due_date: data.due_date || null,
+      due_at: data.due_at || null,
       position: maxPosition + 1,
       created_at: data.created_at || getTimestamp(),
       completed_at: data.completed_at || null,
@@ -304,9 +261,6 @@ export const localTasksApi = {
     const userId = getCurrentLocalUserId();
     localStorage.set(STORAGE_KEYS.TASKS, tasks.filter((task) => !(task.id === taskId && task.user_id === userId)));
 
-    const tags = localStorage.get(STORAGE_KEYS.TASK_TAGS) || [];
-    localStorage.set(STORAGE_KEYS.TASK_TAGS, tags.filter((tag) => !(tag.task_id === taskId && tag.user_id === userId)));
-
     return { id: taskId };
   },
 
@@ -316,27 +270,6 @@ export const localTasksApi = {
   }),
 
   updateTaskPosition: async (taskId, position) => localTasksApi.updateTask(taskId, { position }),
-
-  addTag: async (taskId, tag) => {
-    const normalizedTag = tag.toLowerCase().trim();
-    if (!normalizedTag) throw new Error('Тег не может быть пустым');
-    const userId = getCurrentLocalUserId();
-    const tags = localStorage.get(STORAGE_KEYS.TASK_TAGS) || [];
-    const existing = tags.find((item) => item.task_id === taskId && item.user_id === userId && item.tag === normalizedTag);
-    if (!existing) {
-      tags.push({ task_id: taskId, user_id: userId, tag: normalizedTag });
-      localStorage.set(STORAGE_KEYS.TASK_TAGS, tags);
-    }
-    return { task_id: taskId, tag: normalizedTag };
-  },
-
-  removeTag: async (taskId, tag) => {
-    const normalizedTag = tag.toLowerCase().trim();
-    const userId = getCurrentLocalUserId();
-    const tags = localStorage.get(STORAGE_KEYS.TASK_TAGS) || [];
-    localStorage.set(STORAGE_KEYS.TASK_TAGS, tags.filter((item) => !(item.task_id === taskId && item.user_id === userId && item.tag === normalizedTag)));
-    return { taskId, tag: normalizedTag };
-  },
 };
 
 export { isLocalMode };

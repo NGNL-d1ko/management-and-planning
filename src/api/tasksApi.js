@@ -1,6 +1,6 @@
-﻿import { supabase } from '../lib/supabaseClient';
-import { isLocalMode, localTasksApi } from '../lib/apiAdapter';
+import { supabase } from '../lib/supabaseClient';
 import { emitTasksChanged } from '../lib/dataEvents';
+import { isLocalMode, localTasksApi } from '../lib/apiAdapter';
 import { getSupabaseErrorMessage } from './supabaseErrors';
 
 const getErrorMessage = (error, fallbackMessage) => {
@@ -10,14 +10,36 @@ const getErrorMessage = (error, fallbackMessage) => {
 
 const WORKSPACE_PROJECT_NAME = 'Workspace';
 
-const normalizeTag = (tag) => tag.trim().toLowerCase();
+const normalizeTaskPayload = (data = {}) => {
+  const taskData = { ...data };
 
-export const getTasks = async (projectId, filters = {}) => {
-  if (isLocalMode()) {
-    return localTasksApi.getTasks(projectId, filters);
+  if (taskData.due_at) {
+    const dueAtDate = new Date(taskData.due_at);
+
+    if (Number.isNaN(dueAtDate.getTime())) {
+      throw new Error('Некорректное время дедлайна.');
+    }
+
+    taskData.due_at = dueAtDate.toISOString();
+    taskData.due_date = taskData.due_date || taskData.due_at.slice(0, 10);
+  } else if (Object.prototype.hasOwnProperty.call(taskData, 'due_at')) {
+    taskData.due_at = null;
   }
 
-  const userId = await getCurrentUserIdLocal();
+  return taskData;
+};
+
+const getCurrentUserId = async () => {
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw new Error(error.message || 'Не удалось получить текущего пользователя.');
+  if (!data.user) throw new Error('Пользователь не авторизован.');
+  return data.user.id;
+};
+
+export const getTasks = async (projectId, filters = {}) => {
+  if (isLocalMode()) return localTasksApi.getTasks(projectId, filters);
+
+  const userId = await getCurrentUserId();
 
   let query = supabase
     .from('tasks')
@@ -43,11 +65,9 @@ export const getTasks = async (projectId, filters = {}) => {
 };
 
 export const getAllTasks = async (filters = {}) => {
-  if (isLocalMode()) {
-    return localTasksApi.getAllTasks(filters);
-  }
+  if (isLocalMode()) return localTasksApi.getAllTasks(filters);
 
-  const userId = await getCurrentUserIdLocal();
+  const userId = await getCurrentUserId();
 
   let query = supabase
     .from('tasks')
@@ -70,11 +90,9 @@ export const getAllTasks = async (filters = {}) => {
 };
 
 export const getTask = async (taskId) => {
-  if (isLocalMode()) {
-    return localTasksApi.getTask(taskId);
-  }
+  if (isLocalMode()) return localTasksApi.getTask(taskId);
 
-  const userId = await getCurrentUserIdLocal();
+  const userId = await getCurrentUserId();
 
   const { data: task, error: taskError } = await supabase
     .from('tasks')
@@ -90,14 +108,14 @@ export const getTask = async (taskId) => {
 
 export const createTask = async (projectId, data) => {
   if (isLocalMode()) {
-    const task = await localTasksApi.createTask(projectId, data);
-    emitTasksChanged({ action: 'create', projectId, taskId: task.id, task });
+    const task = await localTasksApi.createTask(projectId, normalizeTaskPayload(data));
+    emitTasksChanged({ action: 'create', projectId: task.project_id, taskId: task.id, task });
     return task;
   }
 
-  const userId = await getCurrentUserIdLocal();
+  const userId = await getCurrentUserId();
   const resolvedProjectId = projectId || await getOrCreateWorkspaceProjectId(userId);
-  const { tags: _tags, ...taskData } = data;
+  const taskData = normalizeTaskPayload(data);
   const status = taskData.status || 'todo';
 
   const { data: lastTask, error: positionError } = await supabase
@@ -125,13 +143,13 @@ export const createTask = async (projectId, data) => {
 
 export const updateTask = async (taskId, data) => {
   if (isLocalMode()) {
-    const task = await localTasksApi.updateTask(taskId, data);
+    const task = await localTasksApi.updateTask(taskId, normalizeTaskPayload(data));
     emitTasksChanged({ action: 'update', projectId: task.project_id, taskId, task });
     return task;
   }
 
-  const userId = await getCurrentUserIdLocal();
-  const { tags: _tags, ...taskData } = data;
+  const userId = await getCurrentUserId();
+  const taskData = normalizeTaskPayload(data);
 
   const { data: task, error } = await supabase
     .from('tasks')
@@ -154,7 +172,7 @@ export const deleteTask = async (taskId) => {
     return result;
   }
 
-  const userId = await getCurrentUserIdLocal();
+  const userId = await getCurrentUserId();
   const { error } = await supabase.from('tasks').delete().eq('id', taskId).eq('user_id', userId);
   if (error) throw new Error(getErrorMessage(error, 'Не удалось удалить задачу.'));
   emitTasksChanged({ action: 'delete', taskId });
@@ -166,51 +184,6 @@ export const updateTaskStatus = async (taskId, status) => updateTask(taskId, {
 });
 
 export const updateTaskPosition = async (taskId, position) => updateTask(taskId, { position });
-
-export const addTag = async (taskId, tag) => {
-  if (isLocalMode()) {
-    const newTag = await localTasksApi.addTag(taskId, tag);
-    emitTasksChanged({ action: 'tag-add', taskId });
-    return newTag;
-  }
-
-  const userId = await getCurrentUserIdLocal();
-  const normalizedTag = normalizeTag(tag);
-  if (!normalizedTag) throw new Error('Тег не может быть пустым.');
-
-  const { data, error } = await supabase
-    .from('task_tags')
-    .upsert({ task_id: taskId, user_id: userId, tag: normalizedTag }, { onConflict: 'task_id,tag' })
-    .select()
-    .single();
-
-  if (error) throw new Error(getErrorMessage(error, 'Не удалось добавить тег.'));
-  emitTasksChanged({ action: 'tag-add', taskId });
-  return data;
-};
-
-export const removeTag = async (taskId, tag) => {
-  if (isLocalMode()) {
-    const removedTag = await localTasksApi.removeTag(taskId, tag);
-    emitTasksChanged({ action: 'tag-remove', taskId });
-    return removedTag;
-  }
-
-  const userId = await getCurrentUserIdLocal();
-  const normalizedTag = normalizeTag(tag);
-  const { error } = await supabase.from('task_tags').delete().eq('task_id', taskId).eq('user_id', userId).eq('tag', normalizedTag);
-  if (error) throw new Error(getErrorMessage(error, 'Не удалось удалить тег.'));
-  emitTasksChanged({ action: 'tag-remove', taskId });
-  return { taskId, tag: normalizedTag };
-};
-
-// Local helper functions
-async function getCurrentUserIdLocal() {
-  const { data, error } = await supabase.auth.getUser();
-  if (error) throw new Error(error.message || 'Не удалось получить текущего пользователя.');
-  if (!data.user) throw new Error('Пользователь не авторизован.');
-  return data.user.id;
-}
 
 async function getOrCreateWorkspaceProjectId(userId) {
   const { data: existingProject, error: existingError } = await supabase

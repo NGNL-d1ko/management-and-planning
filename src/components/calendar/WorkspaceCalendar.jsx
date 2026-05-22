@@ -5,6 +5,7 @@ import { Alert, Card, Spinner } from 'react-bootstrap';
 import * as tasksApi from '../../api/tasksApi';
 import { onTasksChanged } from '../../lib/dataEvents';
 import { getViewCache, hasViewCache, setViewCache } from '../../lib/viewCache';
+import { getTaskDeadlineDate, isTaskOverdue } from '../../utils/deadline';
 import TaskDetailModal from '../tasks/TaskDetailModal';
 import CalendarTaskEvent from './CalendarTaskEvent';
 import TaskCreateFromDateModal from './TaskCreateFromDateModal';
@@ -43,16 +44,13 @@ const messages = {
 const toDateValue = (date) => format(date, 'yyyy-MM-dd');
 const CALENDAR_TASKS_CACHE_KEY = 'tasks:all:{}';
 
-const getTaskDate = (task) => new Date(`${task.due_date}T00:00:00`);
+const getTaskEventDate = (task) => getTaskDeadlineDate(task);
 
-const isOverdue = (task) => {
-  if (!task.due_date || task.status === 'done') {
-    return false;
-  }
+const getTaskEventEndDate = (task) => {
+  const start = getTaskEventDate(task);
+  if (!start || !task.due_at) return start;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return getTaskDate(task) < today;
+  return new Date(start.getTime() + 30 * 60 * 1000);
 };
 
 const WorkspaceCalendar = () => {
@@ -126,17 +124,18 @@ const WorkspaceCalendar = () => {
   }), [refetch]);
 
   const events = useMemo(() => tasks
-    .filter((task) => task.due_date)
+    .filter((task) => task.due_date || task.due_at)
     .map((task) => ({
       title: task.title,
-      start: getTaskDate(task),
-      end: getTaskDate(task),
+      start: getTaskEventDate(task),
+      end: getTaskEventEndDate(task),
+      allDay: !task.due_at,
       resource: task,
     })), [tasks]);
 
   const eventPropGetter = (event) => {
     const task = event.resource;
-    const overdue = isOverdue(task);
+    const overdue = isTaskOverdue(task);
 
     return {
       className: overdue ? 'calendar-event-overdue' : '',
@@ -174,6 +173,7 @@ const WorkspaceCalendar = () => {
               events={events}
               startAccessor="start"
               endAccessor="end"
+              allDayAccessor="allDay"
               view={view}
               views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
               date={date}

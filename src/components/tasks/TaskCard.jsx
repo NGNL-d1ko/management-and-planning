@@ -1,16 +1,7 @@
 import { Card } from 'react-bootstrap';
+import { formatTaskDeadline } from '../../utils/deadline';
 import PriorityBadge from './PriorityBadge';
 import TaskStatusBadge from './TaskStatusBadge';
-
-const formatDate = (dateString) => (
-  dateString
-    ? new Date(`${dateString}T00:00:00`).toLocaleDateString('ru-RU', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    })
-    : 'Без срока'
-);
 
 const TaskCard = ({ task, onClick }) => (
   <Card className="border-0 shadow-sm" role="button" onClick={() => onClick(task)}>
@@ -25,7 +16,7 @@ const TaskCard = ({ task, onClick }) => (
       </div>
 
       <div className="small text-muted">
-        Срок: {formatDate(task.due_date)}
+        Срок: {formatTaskDeadline(task)}
       </div>
     </Card.Body>
   </Card>

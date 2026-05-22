@@ -17,9 +17,15 @@ const applyBodyTheme = (theme) => {
 
 const getNotificationSettings = () => {
   try {
-    return JSON.parse(localStorage.getItem(NOTIFICATION_SETTINGS_KEY)) || {};
+    return JSON.parse(localStorage.getItem(NOTIFICATION_SETTINGS_KEY) || 'null') || {
+      desktopNotifications: false,
+      emailNotifications: false,
+    };
   } catch {
-    return {};
+    return {
+      desktopNotifications: false,
+      emailNotifications: false,
+    };
   }
 };
 
@@ -39,7 +45,7 @@ const SettingsPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeletingProfile, setIsDeletingProfile] = useState(false);
   const [message, setMessage] = useState(null);
-  const [notificationSettings, setNotificationSettings] = useState(() => getNotificationSettings());
+  const [notificationSettings, setNotificationSettings] = useState(getNotificationSettings);
 
   useEffect(() => {
     if (settings?.theme) {
@@ -60,13 +66,14 @@ const SettingsPage = () => {
         desktopNotifications = Notification.permission === 'granted';
       }
 
-      const updatedSettings = await updateSettings({ theme: data.theme });
-      const updatedNotifications = {
+      const nextNotificationSettings = {
         desktopNotifications,
         emailNotifications: data.emailNotifications,
       };
-      saveNotificationSettings(updatedNotifications);
-      setNotificationSettings(updatedNotifications);
+
+      const updatedSettings = await updateSettings({ theme: data.theme });
+      saveNotificationSettings(nextNotificationSettings);
+      setNotificationSettings(nextNotificationSettings);
       applyBodyTheme(updatedSettings.theme);
       setMessage({
         variant: 'success',

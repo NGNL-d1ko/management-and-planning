@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Alert, Button, Col, Form, Modal, Row, Spinner } from 'react-bootstrap';
+import { combineDateAndTime, getTimeFromDueAt } from '../../utils/deadline';
 
 const initialForm = {
   title: '',
@@ -7,6 +8,7 @@ const initialForm = {
   status: 'todo',
   priority: 'medium',
   due_date: '',
+  due_time: '',
 };
 
 const TaskFormModal = ({
@@ -27,6 +29,7 @@ const TaskFormModal = ({
         status: task.status || 'todo',
         priority: task.priority || 'medium',
         due_date: task.due_date || '',
+        due_time: getTimeFromDueAt(task.due_at),
       } : initialForm);
       setError('');
       setIsSubmitting(false);
@@ -71,6 +74,7 @@ const TaskFormModal = ({
         status: form.status,
         priority: form.priority,
         due_date: form.due_date || null,
+        due_at: combineDateAndTime(form.due_date, form.due_time),
       };
 
       await onSubmit(payload);
@@ -136,14 +140,29 @@ const TaskFormModal = ({
             </Col>
           </Row>
 
-          <Form.Group className="mb-3" controlId="task-due-date">
-            <Form.Label>Срок выполнения</Form.Label>
-            <Form.Control
-              type="date"
-              value={form.due_date}
-              onChange={(event) => updateField('due_date', event.target.value)}
-            />
-          </Form.Group>
+          <Row>
+            <Col md={6}>
+              <Form.Group className="mb-3" controlId="task-due-date">
+                <Form.Label>Срок выполнения</Form.Label>
+                <Form.Control
+                  type="date"
+                  value={form.due_date}
+                  onChange={(event) => updateField('due_date', event.target.value)}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group className="mb-3" controlId="task-due-time">
+                <Form.Label>Время дедлайна</Form.Label>
+                <Form.Control
+                  type="time"
+                  value={form.due_time}
+                  onChange={(event) => updateField('due_time', event.target.value)}
+                  disabled={!form.due_date}
+                />
+              </Form.Group>
+            </Col>
+          </Row>
         </Modal.Body>
         <Modal.Footer>
           <Button type="button" variant="outline-secondary" onClick={onHide} disabled={isSubmitting}>

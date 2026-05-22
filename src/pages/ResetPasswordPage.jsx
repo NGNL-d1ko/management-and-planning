@@ -1,34 +1,26 @@
 import { useState } from 'react';
-import { Alert, Button, Card, Container, Form, Spinner } from 'react-bootstrap';
+import { Alert, Button, Card, Container, Spinner } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import PasswordField from '../components/auth/PasswordField';
 import { useAuth } from '../context/AuthContext';
 
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-const RegisterPage = () => {
+const ResetPasswordPage = () => {
   const navigate = useNavigate();
-  const { register } = useAuth();
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
+  const { logout, updatePassword } = useAuth();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
 
   const validateForm = () => {
-    if (!fullName.trim()) {
-      return 'Введите имя.';
-    }
-    if (!emailPattern.test(email)) {
-      return 'Введите корректный email.';
-    }
     if (password.length < 6) {
       return 'Пароль должен содержать минимум 6 символов.';
     }
+
     if (password !== confirmPassword) {
       return 'Пароли не совпадают.';
     }
+
     return '';
   };
 
@@ -45,17 +37,11 @@ const RegisterPage = () => {
     setIsSubmitting(true);
 
     try {
-      const result = await register(fullName.trim(), email, password);
-
-      if (!result.session) {
-        const normalizedEmail = email.trim().toLowerCase();
-        navigate(`/confirm-email?email=${encodeURIComponent(normalizedEmail)}`, { replace: true });
-        return;
-      }
-
-      navigate('/app/dashboard');
-    } catch (registerError) {
-      setFormError(registerError.message || 'Не удалось зарегистрироваться.');
+      await updatePassword(password);
+      await logout();
+      navigate('/login?passwordUpdated=true', { replace: true });
+    } catch (resetError) {
+      setFormError(resetError.message || 'Не удалось обновить пароль. Откройте ссылку из письма ещё раз.');
     } finally {
       setIsSubmitting(false);
     }
@@ -63,11 +49,11 @@ const RegisterPage = () => {
 
   return (
     <Container fluid className="min-vh-100 d-flex align-items-center justify-content-center bg-light px-3">
-      <Card className="shadow-sm border-0 w-100" style={{ maxWidth: '480px' }}>
+      <Card className="shadow-sm border-0 w-100" style={{ maxWidth: '440px' }}>
         <Card.Body className="p-4 p-md-5">
           <div className="text-center mb-4">
-            <h1 className="h3 fw-bold mb-2">your MaP</h1>
-            <p className="text-muted mb-0">Управление и планирование</p>
+            <h1 className="h3 fw-bold mb-2">Новый пароль</h1>
+            <p className="text-muted mb-0">Введите новый пароль для аккаунта.</p>
           </div>
 
           {formError && (
@@ -76,34 +62,10 @@ const RegisterPage = () => {
             </Alert>
           )}
 
-          <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-3" controlId="register-full-name">
-              <Form.Label>Полное имя</Form.Label>
-              <Form.Control
-                type="text"
-                value={fullName}
-                onChange={(event) => setFullName(event.target.value)}
-                placeholder="Ваше имя"
-                autoComplete="name"
-                required
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3" controlId="register-email">
-              <Form.Label>Email</Form.Label>
-              <Form.Control
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="you@example.com"
-                autoComplete="email"
-                required
-              />
-            </Form.Group>
-
+          <form onSubmit={handleSubmit}>
             <PasswordField
-              controlId="register-password"
-              label="Пароль"
+              controlId="reset-password"
+              label="Новый пароль"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Минимум 6 символов"
@@ -113,7 +75,7 @@ const RegisterPage = () => {
             />
 
             <PasswordField
-              controlId="register-confirm-password"
+              controlId="reset-confirm-password"
               label="Подтвердите пароль"
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
@@ -128,17 +90,17 @@ const RegisterPage = () => {
               {isSubmitting ? (
                 <>
                   <Spinner animation="border" size="sm" className="me-2" />
-                  Регистрация...
+                  Сохранение...
                 </>
               ) : (
-                'Зарегистрироваться'
+                'Сохранить пароль'
               )}
             </Button>
-          </Form>
+          </form>
 
           <div className="text-center mt-4">
             <Link to="/login" className="text-decoration-none">
-              Уже есть аккаунт? Войти
+              Вернуться ко входу
             </Link>
           </div>
         </Card.Body>
@@ -147,4 +109,4 @@ const RegisterPage = () => {
   );
 };
 
-export default RegisterPage;
+export default ResetPasswordPage;

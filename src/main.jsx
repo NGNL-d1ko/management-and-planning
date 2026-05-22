@@ -8,9 +8,7 @@ import App from './App';
 
 const getInitialTheme = () => {
   const storedTheme = localStorage.getItem('theme');
-  if (storedTheme) {
-    return storedTheme;
-  }
+  if (storedTheme) return storedTheme;
 
   try {
     const storedUser = JSON.parse(localStorage.getItem('taskflow_user') || 'null');

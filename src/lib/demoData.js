@@ -1,4 +1,4 @@
-﻿import { localStorage, STORAGE_KEYS, generateId, getTimestamp } from './localStorage';
+import { localStorage, STORAGE_KEYS } from './localStorage';
 
 const DEFAULT_USER = {
   id: 'demo-user-001',
@@ -43,7 +43,6 @@ const DEFAULT_PROJECTS = [
 ];
 
 const DEFAULT_TASKS = [
-  // Project 1 tasks
   {
     id: 'task-001',
     project_id: 'proj-001',
@@ -106,7 +105,6 @@ const DEFAULT_TASKS = [
     position: 5,
     created_at: '2025-03-10T08:30:00.000Z',
   },
-  // Project 2 tasks
   {
     id: 'task-006',
     project_id: 'proj-002',
@@ -131,15 +129,6 @@ const DEFAULT_TASKS = [
     position: 2,
     created_at: '2025-03-21T09:00:00.000Z',
   },
-];
-
-const DEFAULT_TASK_TAGS = [
-  { task_id: 'task-002', user_id: DEFAULT_USER.id, tag: 'architecture' },
-  { task_id: 'task-003', user_id: DEFAULT_USER.id, tag: 'development' },
-  { task_id: 'task-003', user_id: DEFAULT_USER.id, tag: 'feature' },
-  { task_id: 'task-004', user_id: DEFAULT_USER.id, tag: 'testing' },
-  { task_id: 'task-006', user_id: DEFAULT_USER.id, tag: 'research' },
-  { task_id: 'task-007', user_id: DEFAULT_USER.id, tag: 'planning' },
 ];
 
 const DEFAULT_SETTINGS = {
@@ -204,13 +193,6 @@ export const initializeDemoData = () => {
     localStorage.set(STORAGE_KEYS.TASKS, [...normalizedTasks, ...missingDemoTasks]);
   }
 
-  const taskTags = localStorage.get(STORAGE_KEYS.TASK_TAGS) || [];
-  const taskTagKeys = new Set(taskTags.map((tag) => `${tag.user_id}:${tag.task_id}:${tag.tag}`));
-  const missingDemoTaskTags = DEFAULT_TASK_TAGS.filter((tag) => !taskTagKeys.has(`${tag.user_id}:${tag.task_id}:${tag.tag}`));
-  if (missingDemoTaskTags.length) {
-    localStorage.set(STORAGE_KEYS.TASK_TAGS, [...taskTags, ...missingDemoTaskTags]);
-  }
-
   if (!existingUser) {
     localStorage.set(STORAGE_KEYS.USER, DEFAULT_USER);
     localStorage.set(STORAGE_KEYS.SESSION, DEFAULT_SESSION);
@@ -229,4 +211,4 @@ export const resetDemoData = () => {
 export const getDemoUser = () => localStorage.get(STORAGE_KEYS.USER);
 export const getDemoSession = () => localStorage.get(STORAGE_KEYS.SESSION);
 
-export { DEFAULT_USER, DEFAULT_SESSION, DEFAULT_PROJECTS, DEFAULT_TASKS, DEFAULT_TASK_TAGS, DEFAULT_SETTINGS, DEFAULT_PROFILE };
+export { DEFAULT_USER, DEFAULT_SESSION, DEFAULT_PROJECTS, DEFAULT_TASKS, DEFAULT_SETTINGS, DEFAULT_PROFILE };

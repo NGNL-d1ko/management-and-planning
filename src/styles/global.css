@@ -490,8 +490,10 @@ font-size: 0.875rem;
   border: 1px solid var(--ym-border-color) !important;
   border-radius: var(--ym-card-radius) !important;
   box-shadow: none !important;
-  min-width: 300px;
-  max-width: 340px;
+  flex: 0 0 320px;
+  width: 320px;
+  min-width: 320px;
+  max-width: 320px;
   transform: none !important; /* columns don't lift */
 }
 
@@ -499,6 +501,10 @@ font-size: 0.875rem;
 .ym-kanban-wrapper .bg-primary-subtle {
   background-color: var(--color-primary-muted) !important;
   border-color: var(--color-primary-border) !important;
+}
+
+.ym-kanban-wrapper .kanban-column {
+  transition: background-color 120ms ease, border-color 120ms ease;
 }
 
 /* Column header */
@@ -526,28 +532,50 @@ font-size: 0.875rem;
   padding: 0.4rem 0.65rem;
 }
 
+.ym-kanban-wrapper .kanban-task-list {
+  align-content: start;
+}
+
+.ym-kanban-wrapper .kanban-sortable-item {
+  touch-action: none;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
 /* ── KanbanCard (inner .card, no h-100) ── */
-.ym-kanban-wrapper .card.h-100 .card {
+.ym-kanban-wrapper .kanban-task-card {
   background-color: var(--color-bg-elevated) !important;
   border: 1px solid var(--ym-border-color) !important;
   border-radius: 8px !important;
   box-shadow: none !important;
   cursor: grab;
+  min-height: 112px;
+  width: 100%;
   transition: box-shadow var(--ym-transition),
               border-color var(--ym-transition);
 }
 
-.ym-kanban-wrapper .card.h-100 .card:hover {
+.ym-kanban-wrapper .kanban-task-card:hover {
   box-shadow: var(--_card-shadow-hover) !important;
   border-color: var(--color-border-strong) !important;
 }
 
-/* Dragging: dnd-kit sets opacity inline (0.55) — add ring */
-.ym-kanban-wrapper .card.h-100 .card[style*="opacity: 0.55"],
-.ym-kanban-wrapper .card.h-100 .card[style*="opacity:0.55"] {
+.ym-kanban-wrapper .kanban-task-card.is-dragging {
+  box-shadow: none !important;
+  border-color: var(--color-border-default) !important;
+}
+
+.ym-kanban-wrapper .kanban-task-card.is-overlay {
+  cursor: grabbing;
   box-shadow: 0 0 0 2px var(--ym-primary),
               0 12px 32px rgba(99, 102, 241, 0.28) !important;
   border-color: var(--ym-primary) !important;
+  transform: rotate(0.6deg);
+}
+
+.kanban-column-note {
+  border-top: 1px solid var(--ym-border-color);
+  padding-top: 0.75rem;
 }
 
 /* EmptyState inside a Kanban column */
@@ -1026,8 +1054,10 @@ font-size: 0.875rem;
   }
 
   .ym-kanban-wrapper .card.h-100 {
-    min-width: 260px;
-    max-width: 300px;
+    flex-basis: 280px;
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
   }
 
   /* Table: tighten cells */
@@ -1062,8 +1092,10 @@ font-size: 0.875rem;
 /* < 576px — small mobile */
 @media (max-width: 575.98px) {
   .ym-kanban-wrapper .card.h-100 {
-    min-width: 240px;
-    max-width: 280px;
+    flex-basis: 260px;
+    width: 260px;
+    min-width: 260px;
+    max-width: 260px;
   }
 
   /* Auth card: full-width with margin */

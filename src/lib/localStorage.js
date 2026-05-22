@@ -1,4 +1,4 @@
-﻿// Local storage service for offline/demo mode
+// Local storage service for offline/demo mode
 const STORAGE_KEYS = {
   USERS: 'local_users',
   USER: 'local_user',
@@ -6,7 +6,6 @@ const STORAGE_KEYS = {
   PROJECTS: 'local_projects',
   TASKS: 'local_tasks',
   ROUTINES: 'local_routines',
-  TASK_TAGS: 'local_task_tags',
   SETTINGS: 'local_settings',
   PROFILE: 'local_profile',
 };

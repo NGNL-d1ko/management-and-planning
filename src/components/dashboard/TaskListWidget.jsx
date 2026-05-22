@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Badge, Button, Card, ListGroup } from 'react-bootstrap';
+import { formatTaskDeadline } from '../../utils/deadline';
 import EmptyState from '../ui/EmptyState';
 
 const priorityVariant = {
@@ -17,17 +18,6 @@ const priorityLabel = {
 };
 
 const visibleTaskLimit = 2;
-
-const formatDate = (dateString) => {
-  if (!dateString) {
-    return 'Без срока';
-  }
-
-  return new Date(`${dateString}T00:00:00`).toLocaleDateString('ru-RU', {
-    month: 'short',
-    day: 'numeric',
-  });
-};
 
 const TaskListWidget = ({
   title,
@@ -67,7 +57,7 @@ const TaskListWidget = ({
                       </Badge>
                     </div>
                     <div className={`small mt-2 ${danger ? 'text-danger' : 'text-muted'}`}>
-                      Срок: {formatDate(task.due_date)}
+                      Срок: {formatTaskDeadline(task, { short: true })}
                     </div>
                   </ListGroup.Item>
                 ))}

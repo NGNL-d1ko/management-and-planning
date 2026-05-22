@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Alert, Button, Col, Form, Modal, Row } from 'react-bootstrap';
 import * as tasksApi from '../../api/tasksApi';
+import { combineDateAndTime } from '../../utils/deadline';
 
 const initialForm = {
   title: '',
   description: '',
   priority: 'medium',
   due_date: '',
+  due_time: '',
 };
 
 const TaskCreateFromDateModal = ({
@@ -70,6 +72,7 @@ const TaskCreateFromDateModal = ({
         description: form.description.trim() || null,
         priority: form.priority,
         due_date: form.due_date,
+        due_at: combineDateAndTime(form.due_date, form.due_time),
       });
 
       onCreated?.(task);
@@ -91,7 +94,7 @@ const TaskCreateFromDateModal = ({
           {error && <Alert variant="danger">{error}</Alert>}
 
           <Row>
-            <Col md={12}>
+            <Col md={6}>
               <Form.Group className="mb-3" controlId="calendar-task-due-date">
                 <Form.Label>Срок выполнения</Form.Label>
                 <Form.Control
@@ -99,6 +102,16 @@ const TaskCreateFromDateModal = ({
                   value={form.due_date}
                   onChange={(event) => updateField('due_date', event.target.value)}
                   required
+                />
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group className="mb-3" controlId="calendar-task-due-time">
+                <Form.Label>Время дедлайна</Form.Label>
+                <Form.Control
+                  type="time"
+                  value={form.due_time}
+                  onChange={(event) => updateField('due_time', event.target.value)}
                 />
               </Form.Group>
             </Col>

@@ -2,16 +2,7 @@ import { Button, Table } from 'react-bootstrap';
 import { Pencil, Trash } from 'react-bootstrap-icons';
 import PriorityBadge from './PriorityBadge';
 import TaskStatusBadge from './TaskStatusBadge';
-
-const formatDate = (dateString) => (
-  dateString
-    ? new Date(`${dateString}T00:00:00`).toLocaleDateString('ru-RU', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    })
-    : 'Без срока'
-);
+import { formatTaskDeadline } from '../../utils/deadline';
 
 const TaskTable = ({
   tasks,
@@ -44,7 +35,7 @@ const TaskTable = ({
             </td>
             <td><TaskStatusBadge status={task.status} /></td>
             <td><PriorityBadge priority={task.priority} /></td>
-            <td>{formatDate(task.due_date)}</td>
+            <td>{formatTaskDeadline(task)}</td>
             <td>
               <div className="d-flex justify-content-end gap-2">
                 <Button variant="outline-secondary" size="sm" onClick={() => onEdit(task)}>

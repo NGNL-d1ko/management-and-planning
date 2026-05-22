@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, {
   createContext,
   useState,
@@ -7,7 +8,6 @@ import React, {
 } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as authApi from '../api/authApi';
-import { DEFAULT_USER } from '../lib/demoData';
 
 // ─── Context ────────────────────────────────────────────────────────────────
 
@@ -80,6 +80,17 @@ export const AuthProvider = ({ children }) => {
     [],
   );
 
+  const requestPasswordReset = useCallback(
+    (email) => authApi.requestPasswordReset(email),
+    [],
+  );
+
+  const updatePassword = useCallback(async (password) => {
+    const updatedUser = await authApi.updatePassword(password);
+    setUser(updatedUser);
+    return updatedUser;
+  }, []);
+
   // ── Login ─────────────────────────────────────────────────────────────────
   const login = useCallback(async (email, password) => {
     const result = await authApi.login({ email, password });
@@ -125,11 +136,10 @@ export const AuthProvider = ({ children }) => {
     loading,
     isLoading: loading,
     isAuthenticated: !!user,
-    // Showcase credentials (useful for UI hints)
-    demoEmail: DEFAULT_USER.email,
-    demoPassword: DEFAULT_USER.password,
     register,
     resendSignupConfirmation,
+    requestPasswordReset,
+    updatePassword,
     login,
     logout,
     updateProfile,

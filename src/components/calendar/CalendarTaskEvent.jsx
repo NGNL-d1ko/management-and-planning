@@ -1,4 +1,5 @@
 import { ExclamationTriangleFill } from 'react-bootstrap-icons';
+import { getTimeFromDueAt, isTaskOverdue } from '../../utils/deadline';
 
 const priorityClass = {
   low: 'calendar-priority-low',
@@ -14,19 +15,10 @@ const statusLabel = {
   done: 'Готово',
 };
 
-const isOverdue = (task) => {
-  if (!task?.due_date || task.status === 'done') {
-    return false;
-  }
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return new Date(`${task.due_date}T00:00:00`) < today;
-};
-
 const CalendarTaskEvent = ({ event }) => {
   const task = event.resource;
-  const overdue = isOverdue(task);
+  const overdue = isTaskOverdue(task);
+  const dueTime = getTimeFromDueAt(task.due_at);
 
   return (
     <div className="calendar-task-event">
@@ -38,6 +30,7 @@ const CalendarTaskEvent = ({ event }) => {
       <div className="calendar-task-event__meta">
         <span className={`calendar-status-dot calendar-status-${task.status || 'todo'}`} />
         <span>{statusLabel[task.status] || task.status || 'К выполнению'}</span>
+        {dueTime && <span>{dueTime}</span>}
       </div>
     </div>
   );

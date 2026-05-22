@@ -9,7 +9,7 @@ export const getSupabaseErrorMessage = (error, fallbackMessage) => {
   const missingTableMatch = message.match(missingTablePattern);
 
   if (missingTableMatch) {
-    return `Таблица public.${missingTableMatch[1]} не найдена в Supabase. Выполните supabase/schema.sql, затем supabase/rls_policies.sql в Supabase SQL Editor.`;
+    return `Таблица public.${missingTableMatch[1]} не найдена в базе данных. Выполните /schema.sql, затем/rls_policies.sql в SQL Editor.`;
   }
 
   return message;

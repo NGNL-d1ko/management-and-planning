@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Alert, Button, Col, Form, Modal, Row, Spinner } from 'react-bootstrap';
 import useTask from '../../hooks/useTask';
+import { combineDateAndTime, formatTaskDeadline, getTimeFromDueAt } from '../../utils/deadline';
 import PriorityBadge from './PriorityBadge';
 import TaskStatusBadge from './TaskStatusBadge';
 
@@ -10,6 +11,7 @@ const initialForm = {
   status: 'todo',
   priority: 'medium',
   due_date: '',
+  due_time: '',
 };
 
 const formatDateTime = (dateString) => (
@@ -51,6 +53,7 @@ const TaskDetailModal = ({
         status: task.status || 'todo',
         priority: task.priority || 'medium',
         due_date: task.due_date || '',
+        due_time: getTimeFromDueAt(task.due_at),
       });
       setFormError('');
       setMessage('');
@@ -95,6 +98,7 @@ const TaskDetailModal = ({
         status: form.status,
         priority: form.priority,
         due_date: form.due_date || null,
+        due_at: combineDateAndTime(form.due_date, form.due_time),
       });
       setMessage('Задача успешно обновлена.');
       onUpdated?.();
@@ -149,6 +153,10 @@ const TaskDetailModal = ({
             </div>
 
             <Row className="g-3 mb-4">
+              <Col md={4}>
+                <div className="small text-muted">Дедлайн</div>
+                <div className="fw-semibold">{formatTaskDeadline(task)}</div>
+              </Col>
               <Col md={4}>
                 <div className="small text-muted">Создана</div>
                 <div className="fw-semibold">{formatDateTime(task.created_at)}</div>
@@ -209,14 +217,29 @@ const TaskDetailModal = ({
                 </Col>
               </Row>
 
-              <Form.Group className="mb-3" controlId="task-detail-due-date">
-                <Form.Label>Срок выполнения</Form.Label>
-                <Form.Control
-                  type="date"
-                  value={form.due_date}
-                  onChange={(event) => updateField('due_date', event.target.value)}
-                />
-              </Form.Group>
+              <Row>
+                <Col md={6}>
+                  <Form.Group className="mb-3" controlId="task-detail-due-date">
+                    <Form.Label>Срок выполнения</Form.Label>
+                    <Form.Control
+                      type="date"
+                      value={form.due_date}
+                      onChange={(event) => updateField('due_date', event.target.value)}
+                    />
+                  </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <Form.Group className="mb-3" controlId="task-detail-due-time">
+                    <Form.Label>Время дедлайна</Form.Label>
+                    <Form.Control
+                      type="time"
+                      value={form.due_time}
+                      onChange={(event) => updateField('due_time', event.target.value)}
+                      disabled={!form.due_date}
+                    />
+                  </Form.Group>
+                </Col>
+              </Row>
             </Form>
           </>
         )}

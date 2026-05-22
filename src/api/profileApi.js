@@ -1,12 +1,9 @@
-﻿import { isLocalMode } from '../lib/apiAdapter';
-import { localProfileApi } from '../lib/localApis';
 import { supabase } from '../lib/supabaseClient';
+import { isLocalMode } from '../lib/apiAdapter';
+import { localProfileApi } from '../lib/localApis';
 import { getSupabaseErrorMessage } from './supabaseErrors';
 
 const getCurrentUserId = async () => {
-  if (isLocalMode()) {
-    return 'demo-user-001';
-  }
   const { data, error } = await supabase.auth.getUser();
   if (error) throw new Error(error.message || 'Не удалось получить текущего пользователя.');
   if (!data.user) throw new Error('Пользователь не авторизован.');
@@ -18,9 +15,8 @@ const throwIfError = (error, fallbackMessage) => {
 };
 
 export const getProfile = async () => {
-  if (isLocalMode()) {
-    return localProfileApi.getProfile();
-  }
+  if (isLocalMode()) return localProfileApi.getProfile();
+
   const userId = await getCurrentUserId();
   const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
   throwIfError(error, 'Не удалось загрузить профиль.');
@@ -39,9 +35,8 @@ export const getProfile = async () => {
 };
 
 export const updateProfile = async (data) => {
-  if (isLocalMode()) {
-    return localProfileApi.updateProfile(data);
-  }
+  if (isLocalMode()) return localProfileApi.updateProfile(data);
+
   const userId = await getCurrentUserId();
   const { data: profile, error } = await supabase
     .from('profiles')
@@ -53,9 +48,7 @@ export const updateProfile = async (data) => {
 };
 
 export const deleteProfile = async () => {
-  if (isLocalMode()) {
-    return localProfileApi.deleteProfile();
-  }
+  if (isLocalMode()) return localProfileApi.deleteProfile();
 
   const userId = await getCurrentUserId();
   const { error } = await supabase.from('profiles').delete().eq('id', userId);

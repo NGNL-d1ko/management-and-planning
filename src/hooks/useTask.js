@@ -108,60 +108,6 @@ export const useTask = (taskId) => {
     }
   }, [taskId]);
 
-  const addTag = useCallback(async (tag) => {
-    if (!taskId) {
-      throw new Error('Не указана задача для добавления тега.');
-    }
-
-    try {
-      const newTag = await tasksApi.addTag(taskId, tag);
-
-      if (mountedRef.current) {
-        setTask((currentTask) => ({
-          ...currentTask,
-          tags: [...(currentTask?.tags || []), newTag],
-        }));
-      }
-
-      return newTag;
-    } catch (tagError) {
-      const message = getErrorMessage(tagError, 'Не удалось добавить тег.');
-
-      if (mountedRef.current) {
-        setError(message);
-      }
-
-      throw new Error(message);
-    }
-  }, [taskId]);
-
-  const removeTag = useCallback(async (tag) => {
-    if (!taskId) {
-      throw new Error('Не указана задача для удаления тега.');
-    }
-
-    try {
-      const removedTag = await tasksApi.removeTag(taskId, tag);
-
-      if (mountedRef.current) {
-        setTask((currentTask) => ({
-          ...currentTask,
-          tags: (currentTask?.tags || []).filter((taskTag) => taskTag.tag !== removedTag.tag),
-        }));
-      }
-
-      return removedTag;
-    } catch (tagError) {
-      const message = getErrorMessage(tagError, 'Не удалось удалить тег.');
-
-      if (mountedRef.current) {
-        setError(message);
-      }
-
-      throw new Error(message);
-    }
-  }, [taskId]);
-
   useEffect(() => {
     mountedRef.current = true;
     void refetch().catch(() => {});
@@ -198,8 +144,6 @@ export const useTask = (taskId) => {
     error,
     updateTask,
     deleteTask,
-    addTag,
-    removeTag,
     refetch,
   };
 };

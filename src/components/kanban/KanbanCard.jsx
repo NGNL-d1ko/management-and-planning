@@ -2,25 +2,36 @@ import { Card } from 'react-bootstrap';
 import { CalendarEvent, ExclamationTriangle } from 'react-bootstrap-icons';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { formatTaskDeadline, isTaskOverdue } from '../../utils/deadline';
 import PriorityBadge from '../tasks/PriorityBadge';
 
-const formatDate = (dateString) => (
-  dateString
-    ? new Date(`${dateString}T00:00:00`).toLocaleDateString('ru-RU', {
-      month: 'short',
-      day: 'numeric',
-    })
-    : 'Без срока'
-);
+export const KanbanCardPreview = ({ task, className = '' }) => {
+  const overdue = isTaskOverdue(task);
 
-const isOverdue = (task) => {
-  if (!task.due_date || task.status === 'done') {
-    return false;
-  }
+  return (
+    <Card className={`kanban-task-card border shadow-sm ${overdue ? 'border-danger-subtle' : ''} ${className}`}>
+      <Card.Body className="p-3">
+        <div className="d-flex justify-content-between align-items-start gap-2 mb-2">
+          <Card.Title className="h6 mb-0 lh-base">{task.title}</Card.Title>
+          <PriorityBadge priority={task.priority} />
+        </div>
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return new Date(`${task.due_date}T00:00:00`) < today;
+        <div className="d-flex flex-wrap gap-2 align-items-center text-muted small mb-2">
+          <span className="d-inline-flex align-items-center gap-1">
+            <CalendarEvent size={14} />
+            {formatTaskDeadline(task, { short: true })}
+          </span>
+        </div>
+
+        {overdue && (
+          <div className="d-flex align-items-center gap-1 text-danger small mb-2">
+            <ExclamationTriangle size={14} />
+            Просрочено
+          </div>
+        )}
+      </Card.Body>
+    </Card>
+  );
 };
 
 const KanbanCard = ({ task, onClick }) => {
@@ -41,16 +52,16 @@ const KanbanCard = ({ task, onClick }) => {
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.55 : 1,
+    transition: isDragging ? undefined : transition,
+    opacity: isDragging ? 0.35 : 1,
     cursor: isDragging ? 'grabbing' : 'grab',
+    zIndex: isDragging ? 1 : undefined,
   };
-  const overdue = isOverdue(task);
 
   return (
-    <Card
+    <div
       ref={setNodeRef}
-      className={`border shadow-sm ${overdue ? 'border-danger-subtle' : ''}`}
+      className="kanban-sortable-item"
       style={style}
       role="button"
       tabIndex={0}
@@ -68,27 +79,8 @@ const KanbanCard = ({ task, onClick }) => {
       {...attributes}
       {...listeners}
     >
-      <Card.Body className="p-3">
-        <div className="d-flex justify-content-between align-items-start gap-2 mb-2">
-          <Card.Title className="h6 mb-0 lh-base">{task.title}</Card.Title>
-          <PriorityBadge priority={task.priority} />
-        </div>
-
-        <div className="d-flex flex-wrap gap-2 align-items-center text-muted small mb-2">
-          <span className="d-inline-flex align-items-center gap-1">
-            <CalendarEvent size={14} />
-            {formatDate(task.due_date)}
-          </span>
-        </div>
-
-        {overdue && (
-          <div className="d-flex align-items-center gap-1 text-danger small mb-2">
-            <ExclamationTriangle size={14} />
-            Просрочено
-          </div>
-        )}
-      </Card.Body>
-    </Card>
+      <KanbanCardPreview task={task} className={isDragging ? 'is-dragging' : ''} />
+    </div>
   );
 };
 

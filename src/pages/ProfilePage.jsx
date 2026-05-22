@@ -8,8 +8,9 @@ import * as tasksApi from '../api/tasksApi';
 import useProfile from '../hooks/useProfile';
 import { onTasksChanged } from '../lib/dataEvents';
 import { getViewCache, hasViewCache, setViewCache } from '../lib/viewCache';
+import { formatTaskDeadline, isTaskOverdue } from '../utils/deadline';
 
-const csvColumns = ['title', 'description', 'status', 'priority', 'due_date', 'created_at', 'completed_at'];
+const csvColumns = ['title', 'description', 'status', 'priority', 'due_date', 'due_at', 'created_at', 'completed_at'];
 const PROFILE_TASKS_CACHE_KEY = 'tasks:all:{}';
 const notificationDateFormat = {
   day: 'numeric',
@@ -72,8 +73,6 @@ const formatDate = (dateString) => (
 
 const getToday = () => new Date().toISOString().slice(0, 10);
 
-const isOverdue = (task) => task.due_date && task.due_date < getToday() && task.status !== 'done';
-
 const getLoginStreak = (tasks) => {
   const createdDays = new Set(tasks
     .map((task) => task.created_at?.slice(0, 10))
@@ -108,8 +107,8 @@ const ProfilePage = () => {
   }), [profile, user]);
   const loginStreak = useMemo(() => getLoginStreak(tasks), [tasks]);
   const historyTasks = useMemo(() => tasks
-    .filter((task) => task.status === 'done' || isOverdue(task))
-    .sort((first, second) => new Date(second.completed_at || second.due_date || second.created_at || 0) - new Date(first.completed_at || first.due_date || first.created_at || 0)), [tasks]);
+    .filter((task) => task.status === 'done' || isTaskOverdue(task))
+    .sort((first, second) => new Date(second.completed_at || second.due_at || second.due_date || second.created_at || 0) - new Date(first.completed_at || first.due_at || first.due_date || first.created_at || 0)), [tasks]);
 
   const refetchTasks = useCallback(async () => {
     const cachedTasks = getViewCache(PROFILE_TASKS_CACHE_KEY);
@@ -212,6 +211,7 @@ const ProfilePage = () => {
           status: row.status || 'todo',
           priority: row.priority || 'medium',
           due_date: row.due_date || null,
+          due_at: row.due_at || null,
           created_at: row.created_at || undefined,
           completed_at: row.completed_at || undefined,
         });
@@ -290,7 +290,7 @@ const ProfilePage = () => {
                 <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
                   <div>
                     <h2 className="h5 mb-1">Импорт и экспорт задач</h2>
-                    <p className="text-muted mb-0">CSV поддерживает title, description, status, priority и due_date.</p>
+                    <p className="text-muted mb-0">CSV поддерживает title, description, status, priority, due_date и due_at.</p>
                   </div>
                   <div className="d-flex flex-wrap gap-2">
                     <Button variant="outline-secondary" onClick={handleExportTasks} disabled={isTasksLoading || tasks.length === 0}>
@@ -327,7 +327,7 @@ const ProfilePage = () => {
               ) : (
                 <ListGroup variant="flush">
                   {historyTasks.map((task) => {
-                    const overdue = isOverdue(task);
+                    const overdue = isTaskOverdue(task);
 
                     return (
                       <ListGroup.Item
@@ -340,7 +340,7 @@ const ProfilePage = () => {
                           <Col>
                             <div className="fw-semibold">{task.title}</div>
                             <div className="small text-muted">
-                              Создана: {formatDate(task.created_at)} · Срок: {formatDate(task.due_date)}
+                              Создана: {formatDate(task.created_at)} · Срок: {formatTaskDeadline(task)}
                               {task.completed_at ? ` · Завершена: ${formatDate(task.completed_at)}` : ''}
                             </div>
                           </Col>

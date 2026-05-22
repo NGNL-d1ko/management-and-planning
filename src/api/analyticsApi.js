@@ -1,12 +1,10 @@
-﻿import { isLocalMode } from '../lib/apiAdapter';
-import { localAnalyticsApi } from '../lib/localApis';
 import { supabase } from '../lib/supabaseClient';
+import { isLocalMode } from '../lib/apiAdapter';
+import { localAnalyticsApi } from '../lib/localApis';
 import { getSupabaseErrorMessage } from './supabaseErrors';
+import { isTaskOverdue } from '../utils/deadline';
 
 const getCurrentUserId = async () => {
-  if (isLocalMode()) {
-    return 'demo-user-001';
-  }
   const { data, error } = await supabase.auth.getUser();
   if (error) throw new Error(error.message || 'Не удалось получить текущего пользователя.');
   if (!data.user) throw new Error('Пользователь не авторизован.');
@@ -36,9 +34,7 @@ const countByField = (items, field) => items.reduce((acc, item) => {
 }, {});
 
 export const getAnalyticsData = async () => {
-  if (isLocalMode()) {
-    return localAnalyticsApi.getAnalyticsData();
-  }
+  if (isLocalMode()) return localAnalyticsApi.getAnalyticsData();
 
   const userId = await getCurrentUserId();
   const days = getLast14Days();
@@ -52,8 +48,7 @@ export const getAnalyticsData = async () => {
 
   const cleanTasks = tasks || [];
   const completedTasks = cleanTasks.filter((task) => task.status === 'done');
-  const today = toDateKey(new Date());
-  const overdueTasks = cleanTasks.filter((task) => task.due_date && task.due_date < today && task.status !== 'done');
+  const overdueTasks = cleanTasks.filter((task) => isTaskOverdue(task));
 
   const completedByDay = days.map((day) => ({
     date: day,

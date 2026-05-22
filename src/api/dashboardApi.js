@@ -1,12 +1,10 @@
-﻿import { isLocalMode } from '../lib/apiAdapter';
-import { localDashboardApi } from '../lib/localApis';
 import { supabase } from '../lib/supabaseClient';
+import { isLocalMode } from '../lib/apiAdapter';
+import { localDashboardApi } from '../lib/localApis';
 import { getSupabaseErrorMessage } from './supabaseErrors';
+import { getTaskDeadlineDateKey, isTaskOverdue } from '../utils/deadline';
 
 const getCurrentUserId = async () => {
-  if (isLocalMode()) {
-    return 'demo-user-001';
-  }
   const { data, error } = await supabase.auth.getUser();
   if (error) throw new Error(error.message || 'Не удалось получить текущего пользователя.');
   if (!data.user) throw new Error('Пользователь не авторизован.');
@@ -25,9 +23,7 @@ const addDays = (dateString, days) => {
 };
 
 export const getDashboardData = async () => {
-  if (isLocalMode()) {
-    return localDashboardApi.getDashboardData();
-  }
+  if (isLocalMode()) return localDashboardApi.getDashboardData();
 
   const userId = await getCurrentUserId();
   const today = getToday();
@@ -44,9 +40,12 @@ export const getDashboardData = async () => {
 
   const cleanTasks = tasks || [];
   const completedTasks = cleanTasks.filter((task) => task.status === 'done');
-  const overdueTasks = cleanTasks.filter((task) => task.due_date && task.due_date < today && task.status !== 'done');
-  const dueTodayTasks = cleanTasks.filter((task) => task.due_date === today && task.status !== 'done');
-  const upcomingTasks = cleanTasks.filter((task) => task.due_date && task.due_date > today && task.due_date <= nextSevenDays && task.status !== 'done').slice(0, 7);
+  const overdueTasks = cleanTasks.filter((task) => isTaskOverdue(task));
+  const dueTodayTasks = cleanTasks.filter((task) => getTaskDeadlineDateKey(task) === today && task.status !== 'done');
+  const upcomingTasks = cleanTasks.filter((task) => {
+    const deadlineDate = getTaskDeadlineDateKey(task);
+    return deadlineDate && deadlineDate > today && deadlineDate <= nextSevenDays && task.status !== 'done';
+  }).slice(0, 7);
 
   return {
     totalTasks: cleanTasks.length,

@@ -1,12 +1,9 @@
-﻿import { isLocalMode } from '../lib/apiAdapter';
-import { localSettingsApi } from '../lib/localApis';
 import { supabase } from '../lib/supabaseClient';
+import { isLocalMode } from '../lib/apiAdapter';
+import { localSettingsApi } from '../lib/localApis';
 import { getSupabaseErrorMessage } from './supabaseErrors';
 
 const getCurrentUserId = async () => {
-  if (isLocalMode()) {
-    return 'demo-user-001';
-  }
   const { data, error } = await supabase.auth.getUser();
   if (error) throw new Error(error.message || 'Не удалось получить текущего пользователя.');
   if (!data.user) throw new Error('Пользователь не авторизован.');
@@ -18,9 +15,8 @@ const throwIfError = (error, fallbackMessage) => {
 };
 
 export const getSettings = async () => {
-  if (isLocalMode()) {
-    return localSettingsApi.getSettings();
-  }
+  if (isLocalMode()) return localSettingsApi.getSettings();
+
   const userId = await getCurrentUserId();
   const { data, error } = await supabase.from('user_settings').select('*').eq('user_id', userId).maybeSingle();
   throwIfError(error, 'Не удалось загрузить настройки.');
@@ -39,9 +35,8 @@ export const getSettings = async () => {
 };
 
 export const updateSettings = async (data) => {
-  if (isLocalMode()) {
-    return localSettingsApi.updateSettings(data);
-  }
+  if (isLocalMode()) return localSettingsApi.updateSettings(data);
+
   const userId = await getCurrentUserId();
   const { data: settings, error } = await supabase
     .from('user_settings')

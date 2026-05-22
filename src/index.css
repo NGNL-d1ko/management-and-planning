@@ -712,8 +712,7 @@ small,
 .badge-status-completed,
 .badge-status-todo,
 .badge-status-progress,
-.badge-status-done,
-.badge-tag {
+.badge-status-done {
   background-color: var(--badge-bg) !important;
   color: var(--badge-text) !important;
   border-color: var(--badge-border) !important;
@@ -754,8 +753,7 @@ small,
 }
 
 .badge-soft-neutral,
-.badge-status-todo,
-.badge-tag {
+.badge-status-todo {
   --badge-bg: var(--color-neutral-muted);
   --badge-text: var(--color-neutral);
   --badge-border: var(--color-neutral-border);

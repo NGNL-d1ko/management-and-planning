@@ -1,5 +1,6 @@
 import { localStorage, STORAGE_KEYS } from './localStorage';
 import { getDemoUser, DEFAULT_PROFILE, DEFAULT_SETTINGS, DEFAULT_USER } from './demoData';
+import { getTaskDeadlineDateKey, isTaskOverdue } from '../utils/deadline';
 
 const getCurrentUser = () => getDemoUser() || DEFAULT_USER;
 const getCurrentUserId = () => getCurrentUser()?.id || DEFAULT_USER.id;
@@ -69,10 +70,13 @@ export const localDashboardApi = {
     const next7Days = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
 
     const completedTasks = tasks.filter((t) => t.status === 'done');
-    const overdueTasks = tasks.filter((t) => t.due_date && t.due_date < today && t.status !== 'done');
-    const dueTodayTasks = tasks.filter((t) => t.due_date === today && t.status !== 'done');
+    const overdueTasks = tasks.filter((task) => isTaskOverdue(task));
+    const dueTodayTasks = tasks.filter((task) => getTaskDeadlineDateKey(task) === today && task.status !== 'done');
     const upcomingTasks = tasks
-      .filter((t) => t.due_date && t.due_date > today && t.due_date <= next7Days && t.status !== 'done')
+      .filter((task) => {
+        const deadlineDate = getTaskDeadlineDateKey(task);
+        return deadlineDate && deadlineDate > today && deadlineDate <= next7Days && task.status !== 'done';
+      })
       .slice(0, 7);
 
     return {
@@ -91,7 +95,6 @@ export const localDashboardApi = {
 export const localAnalyticsApi = {
   getAnalyticsData: async () => {
     const tasks = (localStorage.get(STORAGE_KEYS.TASKS) || []).filter(belongsToCurrentUser);
-    const today = new Date().toISOString().slice(0, 10);
 
     const days = [];
     for (let i = 13; i >= 0; i--) {
@@ -101,7 +104,7 @@ export const localAnalyticsApi = {
     }
 
     const completedTasks = tasks.filter((t) => t.status === 'done');
-    const overdueTasks = tasks.filter((t) => t.due_date && t.due_date < today && t.status !== 'done');
+    const overdueTasks = tasks.filter((task) => isTaskOverdue(task));
 
     const countByField = (items, field) => items.reduce((acc, item) => {
       acc[item[field] || 'unknown'] = (acc[item[field] || 'unknown'] || 0) + 1;

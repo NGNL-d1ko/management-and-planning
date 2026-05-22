@@ -10,6 +10,7 @@ const KanbanColumn = ({
   status,
   title,
   tasks,
+  hiddenCompletedCount = 0,
   onAddTask,
   onTaskClick,
 }) => {
@@ -46,8 +47,7 @@ const KanbanColumn = ({
   return (
     <Card
       ref={setNodeRef}
-      className={`border-0 shadow-sm h-100 ${isOver ? 'bg-primary-subtle' : 'bg-light'}`}
-      style={{ minWidth: 300, maxWidth: 340 }}
+      className={`kanban-column border-0 shadow-sm h-100 ${isOver ? 'is-drag-over bg-primary-subtle' : 'bg-light'}`}
     >
       <Card.Header className="bg-transparent border-0 pb-0">
         <div className="d-flex align-items-center justify-content-between gap-2">
@@ -80,13 +80,19 @@ const KanbanColumn = ({
               framed={false}
             />
           ) : (
-            <div className="d-grid gap-2">
+            <div className="kanban-task-list d-grid gap-2">
               {tasks.map((task) => (
                 <KanbanCard key={task.id} task={task} onClick={onTaskClick} />
               ))}
             </div>
           )}
         </SortableContext>
+
+        {hiddenCompletedCount > 0 && (
+          <div className="kanban-column-note small text-muted text-center mt-auto">
+            Старые готовые: {hiddenCompletedCount}
+          </div>
+        )}
       </Card.Body>
     </Card>
   );

@@ -3,6 +3,8 @@ import { Alert, Spinner } from 'react-bootstrap';
 import {
   closestCorners,
   DndContext,
+  DragOverlay,
+  defaultDropAnimationSideEffects,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -12,6 +14,7 @@ import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import useTasks from '../../hooks/useTasks';
 import TaskDetailModal from '../tasks/TaskDetailModal';
 import KanbanColumn from './KanbanColumn';
+import { KanbanCardPreview } from './KanbanCard';
 
 const columns = [
   { status: 'backlog', title: 'Очередь' },
@@ -21,6 +24,7 @@ const columns = [
 ];
 
 const columnStatuses = columns.map((column) => column.status);
+const RECENT_DONE_DAYS = 7;
 
 const sortTasks = (tasks) => [...tasks].sort((first, second) => {
   const positionDiff = (first.position || 0) - (second.position || 0);
@@ -33,6 +37,31 @@ const sortTasks = (tasks) => [...tasks].sort((first, second) => {
 });
 
 const getCompletedAt = (status) => (status === 'done' ? new Date().toISOString() : null);
+
+const isRecentlyCompleted = (task) => {
+  if (task.status !== 'done' || !task.completed_at) {
+    return false;
+  }
+
+  const completedAt = new Date(task.completed_at);
+  if (Number.isNaN(completedAt.getTime())) {
+    return false;
+  }
+
+  return Date.now() - completedAt.getTime() <= RECENT_DONE_DAYS * 24 * 60 * 60 * 1000;
+};
+
+const dropAnimation = {
+  duration: 180,
+  easing: 'cubic-bezier(0.2, 0, 0, 1)',
+  sideEffects: defaultDropAnimationSideEffects({
+    styles: {
+      active: {
+        opacity: '0.35',
+      },
+    },
+  }),
+};
 
 const KanbanBoard = ({ projectId, showCompleted = false }) => {
   const {
@@ -47,6 +76,7 @@ const KanbanBoard = ({ projectId, showCompleted = false }) => {
   } = useTasks(projectId);
   const [boardError, setBoardError] = useState('');
   const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [activeTaskId, setActiveTaskId] = useState(null);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -58,15 +88,30 @@ const KanbanBoard = ({ projectId, showCompleted = false }) => {
     }),
   );
 
-  const groupedTasks = useMemo(() => columns.reduce((acc, column) => {
-    acc[column.status] = sortTasks(tasks.filter((task) => (
-      task.status === column.status
-      && (showCompleted || column.status !== 'done')
-    )));
-    return acc;
-  }, {}), [showCompleted, tasks]);
+  const { groupedTasks, hiddenOldDoneCount } = useMemo(() => {
+    const grouped = columns.reduce((acc, column) => {
+      acc[column.status] = sortTasks(tasks.filter((task) => {
+        if (task.status !== column.status) {
+          return false;
+        }
+
+        if (column.status !== 'done' || showCompleted) {
+          return true;
+        }
+
+        return isRecentlyCompleted(task);
+      }));
+      return acc;
+    }, {});
+    const hiddenDone = showCompleted
+      ? 0
+      : tasks.filter((task) => task.status === 'done' && !isRecentlyCompleted(task)).length;
+
+    return { groupedTasks: grouped, hiddenOldDoneCount: hiddenDone };
+  }, [showCompleted, tasks]);
 
   const getTaskById = (taskId) => tasks.find((task) => task.id === taskId);
+  const activeTask = activeTaskId ? getTaskById(activeTaskId) : null;
 
   const getStatusByOverId = (overId) => {
     if (columnStatuses.includes(overId)) {
@@ -135,7 +180,13 @@ const KanbanBoard = ({ projectId, showCompleted = false }) => {
     setTasks(nextTasks);
   };
 
+  const handleDragStart = ({ active }) => {
+    setActiveTaskId(active.id);
+  };
+
   const handleDragEnd = async ({ active, over }) => {
+    setActiveTaskId(null);
+
     if (!over || active.id === over.id) {
       return;
     }
@@ -170,6 +221,10 @@ const KanbanBoard = ({ projectId, showCompleted = false }) => {
     }
   };
 
+  const handleDragCancel = () => {
+    setActiveTaskId(null);
+  };
+
   const handleAddTask = async (status, title) => {
     setBoardError('');
 
@@ -201,7 +256,13 @@ const KanbanBoard = ({ projectId, showCompleted = false }) => {
         <Alert variant="danger">{boardError || error}</Alert>
       )}
 
-      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
         <div className="ym-kanban-wrapper overflow-auto pb-3">
           <div className="d-flex gap-3 align-items-stretch" style={{ minHeight: 520 }}>
             {columns.map((column) => (
@@ -210,12 +271,16 @@ const KanbanBoard = ({ projectId, showCompleted = false }) => {
                 status={column.status}
                 title={column.title}
                 tasks={groupedTasks[column.status] || []}
+                hiddenCompletedCount={column.status === 'done' ? hiddenOldDoneCount : 0}
                 onAddTask={handleAddTask}
                 onTaskClick={(task) => setSelectedTaskId(task.id)}
               />
             ))}
           </div>
         </div>
+        <DragOverlay dropAnimation={dropAnimation}>
+          {activeTask ? <KanbanCardPreview task={activeTask} className="is-overlay" /> : null}
+        </DragOverlay>
       </DndContext>
 
       <TaskDetailModal

@@ -17,7 +17,7 @@ const KanbanPage = () => {
         <Form.Check
           type="switch"
           id="kanban-show-completed"
-          label="Показывать готовые"
+          label="Показывать все готовые"
           checked={showCompleted}
           onChange={(event) => setShowCompleted(event.target.checked)}
         />
