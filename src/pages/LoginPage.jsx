@@ -3,22 +3,24 @@ import { Alert, Button, Card, Container, Form, Spinner } from 'react-bootstrap';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import PasswordField from '../components/auth/PasswordField';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { login } = useAuth();
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
   const [notice, setNotice] = useState(() => {
     if (searchParams.get('confirmed') === 'true') {
-      return 'Email подтверждён. Теперь войдите в аккаунт.';
+      return t('auth.confirmedNotice');
     }
 
     if (searchParams.get('passwordUpdated') === 'true') {
-      return 'Пароль обновлён. Теперь войдите в аккаунт.';
+      return t('auth.passwordUpdatedNotice');
     }
 
     return '';
@@ -34,7 +36,7 @@ const LoginPage = () => {
       await login(email, password);
       navigate('/app/dashboard');
     } catch (loginError) {
-      setFormError(loginError.message || 'Не удалось войти в аккаунт.');
+      setFormError(loginError.message || t('auth.loginError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -46,7 +48,7 @@ const LoginPage = () => {
         <Card.Body className="p-4 p-md-5">
           <div className="text-center mb-4">
             <h1 className="h3 fw-bold mb-2">your MaP</h1>
-            <p className="text-muted mb-0">Управление и планирование</p>
+            <p className="text-muted mb-0">{t('common.appSubtitle')}</p>
           </div>
 
           {formError && (
@@ -76,10 +78,10 @@ const LoginPage = () => {
 
             <PasswordField
               controlId="login-password"
-              label="Пароль"
+              label={t('auth.password')}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="Введите пароль"
+              placeholder={t('auth.passwordPlaceholder')}
               autoComplete="current-password"
               required
               className="mb-3"
@@ -87,7 +89,7 @@ const LoginPage = () => {
 
             <div className="text-end mb-4">
               <Link to="/forgot-password" className="text-decoration-none small">
-                Забыли пароль?
+                {t('auth.forgotPassword')}
               </Link>
             </div>
 
@@ -95,10 +97,10 @@ const LoginPage = () => {
               {isSubmitting ? (
                 <>
                   <Spinner animation="border" size="sm" className="me-2" />
-                  Вход...
+                  {t('auth.loginLoading')}
                 </>
               ) : (
-                'Войти'
+                t('auth.login')
               )}
             </Button>
 
@@ -106,7 +108,7 @@ const LoginPage = () => {
 
           <div className="text-center mt-4">
             <Link to="/register" className="text-decoration-none">
-              Нет аккаунта? Зарегистрироваться
+              {t('auth.loginNoAccount')}
             </Link>
           </div>
         </Card.Body>

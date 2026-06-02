@@ -3,10 +3,12 @@ import { Alert, Button, Card, Container, Spinner } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import PasswordField from '../components/auth/PasswordField';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const ResetPasswordPage = () => {
   const navigate = useNavigate();
   const { logout, updatePassword } = useAuth();
+  const { t } = useLanguage();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -14,11 +16,11 @@ const ResetPasswordPage = () => {
 
   const validateForm = () => {
     if (password.length < 6) {
-      return 'Пароль должен содержать минимум 6 символов.';
+      return t('auth.passwordMinError');
     }
 
     if (password !== confirmPassword) {
-      return 'Пароли не совпадают.';
+      return t('auth.passwordMismatch');
     }
 
     return '';
@@ -41,7 +43,7 @@ const ResetPasswordPage = () => {
       await logout();
       navigate('/login?passwordUpdated=true', { replace: true });
     } catch (resetError) {
-      setFormError(resetError.message || 'Не удалось обновить пароль. Откройте ссылку из письма ещё раз.');
+      setFormError(resetError.message || t('auth.resetError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -52,8 +54,8 @@ const ResetPasswordPage = () => {
       <Card className="shadow-sm border-0 w-100" style={{ maxWidth: '440px' }}>
         <Card.Body className="p-4 p-md-5">
           <div className="text-center mb-4">
-            <h1 className="h3 fw-bold mb-2">Новый пароль</h1>
-            <p className="text-muted mb-0">Введите новый пароль для аккаунта.</p>
+            <h1 className="h3 fw-bold mb-2">{t('auth.resetTitle')}</h1>
+            <p className="text-muted mb-0">{t('auth.resetSubtitle')}</p>
           </div>
 
           {formError && (
@@ -65,10 +67,10 @@ const ResetPasswordPage = () => {
           <form onSubmit={handleSubmit}>
             <PasswordField
               controlId="reset-password"
-              label="Новый пароль"
+              label={t('auth.resetPassword')}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="Минимум 6 символов"
+              placeholder={t('auth.minPassword')}
               autoComplete="new-password"
               minLength={6}
               required
@@ -76,10 +78,10 @@ const ResetPasswordPage = () => {
 
             <PasswordField
               controlId="reset-confirm-password"
-              label="Подтвердите пароль"
+              label={t('auth.confirmPassword')}
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
-              placeholder="Повторите пароль"
+              placeholder={t('auth.repeatPassword')}
               autoComplete="new-password"
               minLength={6}
               required
@@ -90,17 +92,17 @@ const ResetPasswordPage = () => {
               {isSubmitting ? (
                 <>
                   <Spinner animation="border" size="sm" className="me-2" />
-                  Сохранение...
+                  {t('common.saving')}
                 </>
               ) : (
-                'Сохранить пароль'
+                t('auth.resetSubmit')
               )}
             </Button>
           </form>
 
           <div className="text-center mt-4">
             <Link to="/login" className="text-decoration-none">
-              Вернуться ко входу
+              {t('common.backToLogin')}
             </Link>
           </div>
         </Card.Body>

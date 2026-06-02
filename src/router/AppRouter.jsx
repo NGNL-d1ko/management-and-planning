@@ -1,9 +1,11 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from '../context/AuthContext';
+import { LanguageProvider } from '../context/LanguageContext';
 import { ToastProvider } from '../context/ToastContext';
 import ToastContainer from '../components/ui/ToastContainer';
 import ProtectedRoute from '../components/auth/ProtectedRoute';
 import AppLayout from '../layouts/AppLayout';
+import GuestPreviewPage from '../pages/GuestPreviewPage';
 import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
 import ConfirmEmailPage from '../pages/ConfirmEmailPage';
@@ -28,7 +30,7 @@ const DefaultRedirect = () => {
 
   return (
     <Navigate
-      to={isAuthenticated ? '/app/dashboard' : '/login'}
+      to={isAuthenticated ? '/app/dashboard' : '/guest'}
       replace
     />
   );
@@ -37,6 +39,7 @@ const DefaultRedirect = () => {
 const AppRoutes = () => (
   <Routes>
     <Route path="/" element={<DefaultRedirect />} />
+    <Route path="/guest" element={<GuestPreviewPage />} />
     <Route path="/login" element={<LoginPage />} />
     <Route path="/register" element={<RegisterPage />} />
     <Route path="/confirm-email" element={<ConfirmEmailPage />} />
@@ -66,8 +69,10 @@ const AppRoutes = () => (
 const AppRouter = () => (
   <AuthProvider>
     <ToastProvider>
-      <AppRoutes />
-      <ToastContainer />
+      <LanguageProvider>
+        <AppRoutes />
+        <ToastContainer />
+      </LanguageProvider>
     </ToastProvider>
   </AuthProvider>
 );

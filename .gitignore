@@ -17,6 +17,7 @@ dist-ssr
 .env
 .env.*
 .env.example
+assumed code/
 
 # Private keys, certs, local credentials
 *.pem
@@ -53,6 +54,7 @@ secrets*.json
 
 .vercel
 .netlify
+supabase
 supabase/.temp/
 supabase/.branches/
 supabase/.env

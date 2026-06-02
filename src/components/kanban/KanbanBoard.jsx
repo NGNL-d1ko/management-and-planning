@@ -12,15 +12,16 @@ import {
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import useTasks from '../../hooks/useTasks';
+import { useLanguage } from '../../context/LanguageContext';
 import TaskDetailModal from '../tasks/TaskDetailModal';
 import KanbanColumn from './KanbanColumn';
 import { KanbanCardPreview } from './KanbanCard';
 
 const columns = [
-  { status: 'backlog', title: 'Очередь' },
-  { status: 'todo', title: 'К выполнению' },
-  { status: 'in_progress', title: 'В работе' },
-  { status: 'done', title: 'Готово' },
+  { status: 'backlog', titleKey: 'status.backlog' },
+  { status: 'todo', titleKey: 'status.todo' },
+  { status: 'in_progress', titleKey: 'status.in_progress' },
+  { status: 'done', titleKey: 'status.done' },
 ];
 
 const columnStatuses = columns.map((column) => column.status);
@@ -63,7 +64,8 @@ const dropAnimation = {
   }),
 };
 
-const KanbanBoard = ({ projectId, showCompleted = false }) => {
+const KanbanBoard = ({ projectId, showRecentlyCompleted = false }) => {
+  const { t } = useLanguage();
   const {
     tasks,
     setTasks,
@@ -88,27 +90,28 @@ const KanbanBoard = ({ projectId, showCompleted = false }) => {
     }),
   );
 
-  const { groupedTasks, hiddenOldDoneCount } = useMemo(() => {
+  const { groupedTasks, hiddenDoneCount } = useMemo(() => {
     const grouped = columns.reduce((acc, column) => {
       acc[column.status] = sortTasks(tasks.filter((task) => {
         if (task.status !== column.status) {
           return false;
         }
 
-        if (column.status !== 'done' || showCompleted) {
+        if (column.status !== 'done') {
           return true;
         }
 
-        return isRecentlyCompleted(task);
+        return showRecentlyCompleted && isRecentlyCompleted(task);
       }));
       return acc;
     }, {});
-    const hiddenDone = showCompleted
-      ? 0
-      : tasks.filter((task) => task.status === 'done' && !isRecentlyCompleted(task)).length;
+    const hiddenDone = tasks.filter((task) => (
+      task.status === 'done' &&
+      (!showRecentlyCompleted || !isRecentlyCompleted(task))
+    )).length;
 
-    return { groupedTasks: grouped, hiddenOldDoneCount: hiddenDone };
-  }, [showCompleted, tasks]);
+    return { groupedTasks: grouped, hiddenDoneCount: hiddenDone };
+  }, [showRecentlyCompleted, tasks]);
 
   const getTaskById = (taskId) => tasks.find((task) => task.id === taskId);
   const activeTask = activeTaskId ? getTaskById(activeTaskId) : null;
@@ -217,7 +220,7 @@ const KanbanBoard = ({ projectId, showCompleted = false }) => {
       await persistMove(previousTasks, nextTasks, active.id);
     } catch (moveError) {
       setTasks(previousTasks);
-      setBoardError(moveError.message || 'Не удалось переместить задачу.');
+      setBoardError(moveError.message || t('kanban.moveError'));
     }
   };
 
@@ -235,7 +238,7 @@ const KanbanBoard = ({ projectId, showCompleted = false }) => {
         priority: 'medium',
       });
     } catch (createError) {
-      setBoardError(createError.message || 'Не удалось создать задачю.');
+      setBoardError(createError.message || t('kanban.createError'));
       throw createError;
     }
   };
@@ -244,7 +247,7 @@ const KanbanBoard = ({ projectId, showCompleted = false }) => {
     return (
       <div className="text-center py-5">
         <Spinner animation="border" role="status" variant="primary">
-          <span className="visually-hidden">Загрузка доски...</span>
+          <span className="visually-hidden">{t('kanban.loading')}</span>
         </Spinner>
       </div>
     );
@@ -269,9 +272,9 @@ const KanbanBoard = ({ projectId, showCompleted = false }) => {
               <KanbanColumn
                 key={column.status}
                 status={column.status}
-                title={column.title}
+                title={t(column.titleKey)}
                 tasks={groupedTasks[column.status] || []}
-                hiddenCompletedCount={column.status === 'done' ? hiddenOldDoneCount : 0}
+                hiddenCompletedCount={column.status === 'done' ? hiddenDoneCount : 0}
                 onAddTask={handleAddTask}
                 onTaskClick={(task) => setSelectedTaskId(task.id)}
               />

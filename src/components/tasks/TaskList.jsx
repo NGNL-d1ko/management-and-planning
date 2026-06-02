@@ -4,6 +4,7 @@ import { ListTask } from 'react-bootstrap-icons';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import EmptyState from '../ui/EmptyState';
 import SkeletonCard from '../ui/SkeletonCard';
+import { useLanguage } from '../../context/LanguageContext';
 import { useToast } from '../../context/ToastContext';
 import TaskCard from './TaskCard';
 import TaskDetailModal from './TaskDetailModal';
@@ -12,9 +13,15 @@ import TaskFormModal from './TaskFormModal';
 import TaskTable from './TaskTable';
 import useTasks from '../../hooks/useTasks';
 
-const getDateLabel = (dateString) => {
+const localeByLanguage = {
+  ru: 'ru-RU',
+  en: 'en-US',
+  kk: 'kk-KZ',
+};
+
+const getDateLabel = (dateString, language, t) => {
   if (!dateString) {
-    return 'Без срока';
+    return t('tasks.noDueDate');
   }
 
   const today = new Date();
@@ -22,11 +29,11 @@ const getDateLabel = (dateString) => {
   const date = new Date(`${dateString}T00:00:00`);
   const diffDays = Math.round((date - today) / 86400000);
 
-  if (diffDays === 0) return 'Сегодня';
-  if (diffDays === 1) return 'Завтра';
-  if (diffDays === -1) return 'Вчера';
+  if (diffDays === 0) return t('dashboard.today');
+  if (diffDays === 1) return t('tasks.tomorrow');
+  if (diffDays === -1) return t('tasks.yesterday');
 
-  return date.toLocaleDateString('ru-RU', {
+  return date.toLocaleDateString(localeByLanguage[language] || 'ru-RU', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -39,6 +46,7 @@ const getDateSortValue = (dateString) => (
 );
 
 const TaskList = ({ projectId }) => {
+  const { language, t } = useLanguage();
   const [filters, setFilters] = useState({
     status: '',
     priority: '',
@@ -78,10 +86,10 @@ const TaskList = ({ projectId }) => {
       ))
       .map(([date, groupTasks]) => ({
         date,
-        label: getDateLabel(date === 'none' ? '' : date),
+        label: getDateLabel(date === 'none' ? '' : date, language, t),
         tasks: groupTasks,
       }));
-  }, [visibleTasks]);
+  }, [language, t, visibleTasks]);
 
   const openCreateModal = () => {
     setEditingTask(null);
@@ -96,12 +104,12 @@ const TaskList = ({ projectId }) => {
   const handleSubmitTask = async (data) => {
     if (editingTask) {
       const updatedTask = await updateTask(editingTask.id, data);
-      showToast('Задача успешно обновлена.', 'success');
+      showToast(t('tasks.updated'), 'success');
       return updatedTask;
     }
 
     const task = await createTask(data);
-    showToast('Задача успешно создана.', 'success');
+    showToast(t('tasks.created'), 'success');
     return task;
   };
 
@@ -112,9 +120,9 @@ const TaskList = ({ projectId }) => {
 
     try {
       await deleteTask(task.id);
-      showToast('Задача удалена.', 'success');
+      showToast(t('tasks.deleted'), 'success');
     } catch (deleteError) {
-      showToast(deleteError.message || 'Не удалось удалить задачу.', 'danger');
+      showToast(deleteError.message || t('tasks.deleteError'), 'danger');
     }
   };
 
@@ -133,9 +141,9 @@ const TaskList = ({ projectId }) => {
       ) : visibleTasks.length === 0 ? (
         <EmptyState
           icon={ListTask}
-          title="Задачи не найдены"
-          description="Готовые задачи скрыты по умолчанию и доступны в истории профиля."
-          actionLabel="Новая задача"
+          title={t('tasks.notFoundTitle')}
+          description={t('tasks.notFoundDescription')}
+          actionLabel={t('tasks.newTask')}
           onAction={openCreateModal}
         />
       ) : (
@@ -182,15 +190,15 @@ const TaskList = ({ projectId }) => {
         onHide={() => setSelectedTaskId(null)}
         onUpdated={() => {
           void refetch().catch(() => {});
-          showToast('Задача успешно обновлена.', 'success');
+          showToast(t('tasks.updated'), 'success');
         }}
       />
 
       <ConfirmDialog
         show={Boolean(pendingDelete)}
-        title="Удалить задачу"
-        message={`Удалить «${pendingDelete?.title}»? Это действие нельзя отменить.`}
-        confirmLabel="Удалить"
+        title={t('tasks.deleteTitle')}
+        message={t('tasks.deleteConfirm', { title: pendingDelete?.title })}
+        confirmLabel={t('common.delete')}
         variant="danger"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setPendingDelete(null)}

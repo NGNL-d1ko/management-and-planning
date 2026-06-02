@@ -2,16 +2,18 @@ import { useState } from 'react';
 import { Alert, Button, Card, Container, Form, Spinner } from 'react-bootstrap';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const ConfirmEmailPage = () => {
   const [searchParams] = useSearchParams();
   const initialEmail = searchParams.get('email') || '';
   const { resendSignupConfirmation } = useAuth();
+  const { t } = useLanguage();
   const [email, setEmail] = useState(initialEmail);
   const [isResending, setIsResending] = useState(false);
   const [formError, setFormError] = useState('');
   const [notice, setNotice] = useState(
-    email ? `Письмо подтверждения отправлено на ${email}.` : '',
+    email ? t('auth.confirmSent', { email }) : '',
   );
 
   if (!initialEmail) {
@@ -22,7 +24,7 @@ const ConfirmEmailPage = () => {
     const targetEmail = email.trim().toLowerCase();
 
     if (!targetEmail) {
-      setFormError('Введите email, чтобы отправить письмо подтверждения.');
+      setFormError(t('auth.confirmEmailRequired'));
       return;
     }
 
@@ -34,11 +36,11 @@ const ConfirmEmailPage = () => {
       const result = await resendSignupConfirmation(targetEmail);
       setNotice(
         result.alreadyConfirmed
-          ? 'Email уже подтверждён. Вы можете войти в аккаунт.'
-          : `Письмо подтверждения повторно отправлено на ${targetEmail}.`,
+          ? t('auth.confirmAlready')
+          : t('auth.confirmResent', { email: targetEmail }),
       );
     } catch (resendError) {
-      setFormError(resendError.message || 'Не удалось отправить письмо подтверждения.');
+      setFormError(resendError.message || t('auth.confirmError'));
     } finally {
       setIsResending(false);
     }
@@ -49,8 +51,8 @@ const ConfirmEmailPage = () => {
       <Card className="shadow-sm border-0 w-100" style={{ maxWidth: '480px' }}>
         <Card.Body className="p-4 p-md-5">
           <div className="text-center mb-4">
-            <h1 className="h3 fw-bold mb-2">Проверьте почту</h1>
-            <p className="text-muted mb-0">Подтвердите email, затем вернитесь ко входу.</p>
+            <h1 className="h3 fw-bold mb-2">{t('auth.confirmTitle')}</h1>
+            <p className="text-muted mb-0">{t('auth.confirmSubtitle')}</p>
           </div>
 
           {formError && (
@@ -86,15 +88,15 @@ const ConfirmEmailPage = () => {
             {isResending ? (
               <>
                 <Spinner animation="border" size="sm" className="me-2" />
-                Отправка...
+                {t('auth.sending')}
               </>
             ) : (
-              'Отправить письмо ещё раз'
+              t('auth.confirmResend')
             )}
           </Button>
 
           <Button as={Link} to="/login" variant="primary" className="w-100">
-            Вернуться ко входу
+            {t('common.backToLogin')}
           </Button>
         </Card.Body>
       </Card>

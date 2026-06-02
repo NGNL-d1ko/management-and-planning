@@ -6,23 +6,25 @@ import Sidebar from '../components/Layout/Sidebar';
 import Topbar from '../components/Layout/Topbar';
 import { navigationItems } from '../components/Layout/navigationItems';
 import ErrorBoundary from '../components/ui/ErrorBoundary';
+import { useLanguage } from '../context/LanguageContext';
 import useAppDataPreload from '../hooks/useAppDataPreload';
 import useRoutineGeneration from '../hooks/useRoutineGeneration';
 
-const getPageTitle = (pathname) => {
+const getPageTitleKey = (pathname) => {
   const activeItem = navigationItems
     .slice()
     .sort((first, second) => second.to.length - first.to.length)
     .find((item) => pathname.startsWith(item.to));
 
-  return activeItem?.label || 'Dashboard';
+  return activeItem?.labelKey || 'nav.dashboard';
 };
 
 const AppLayout = () => {
   const location = useLocation();
+  const { t } = useLanguage();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSidebarMinimized, setIsSidebarMinimized] = useState(false);
-  const title = useMemo(() => getPageTitle(location.pathname), [location.pathname]);
+  const title = useMemo(() => t(getPageTitleKey(location.pathname)), [location.pathname, t]);
   useAppDataPreload();
   useRoutineGeneration();
 

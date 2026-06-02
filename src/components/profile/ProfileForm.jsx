@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Alert, Button, Card, Col, Form, Image, Row } from 'react-bootstrap';
 import { Image as ImageIcon, Save, Trash } from 'react-bootstrap-icons';
+import { useLanguage } from '../../context/LanguageContext';
 
 const initialForm = {
   full_name: '',
@@ -17,6 +18,7 @@ const getAvatarUrl = (form) => (
 );
 
 const ProfileForm = ({ profile, onSubmit, isSaving }) => {
+  const { t } = useLanguage();
   const fileInputRef = useRef(null);
   const [form, setForm] = useState(() => ({
     full_name: profile?.full_name || initialForm.full_name,
@@ -49,13 +51,13 @@ const ProfileForm = ({ profile, onSubmit, isSaving }) => {
     }
 
     if (!supportedAvatarTypes.includes(file.type)) {
-      setAvatarError(`Поддерживаются только: ${supportedAvatarExtensions.join(', ')}`);
+      setAvatarError(t('profile.supportedOnly', { formats: supportedAvatarExtensions.join(', ') }));
       event.target.value = '';
       return;
     }
 
     if (file.size > maxAvatarSizeBytes) {
-      setAvatarError('Размер изображения должен быть не больше 1 МБ.');
+      setAvatarError(t('profile.avatarTooLarge'));
       event.target.value = '';
       return;
     }
@@ -65,7 +67,7 @@ const ProfileForm = ({ profile, onSubmit, isSaving }) => {
       updateField('avatar_url', reader.result || '');
     };
     reader.onerror = () => {
-      setAvatarError('Не удалось прочитать изображение.');
+      setAvatarError(t('profile.avatarReadError'));
     };
     reader.readAsDataURL(file);
   };
@@ -89,13 +91,13 @@ const ProfileForm = ({ profile, onSubmit, isSaving }) => {
                 roundedCircle
                 width={112}
                 height={112}
-                alt="Аватар профиля"
+                alt={t('profile.avatarAlt')}
                 className="border object-fit-cover"
               />
               <div className="d-grid gap-2 mt-3">
                 <Form.Label className="btn btn-outline-secondary btn-sm mb-0">
                   <ImageIcon className="me-2" />
-                  Изменить фото
+                  {t('profile.changePhoto')}
                   <Form.Control
                     ref={fileInputRef}
                     type="file"
@@ -107,12 +109,12 @@ const ProfileForm = ({ profile, onSubmit, isSaving }) => {
                 {form.avatar_url && (
                   <Button type="button" variant="outline-danger" size="sm" onClick={handleResetAvatar}>
                     <Trash className="me-2" />
-                    Убрать фото
+                    {t('profile.removePhoto')}
                   </Button>
                 )}
               </div>
               <div className="small text-muted mt-2">
-                Поддерживаются: {supportedAvatarExtensions.join(', ')}
+                {t('profile.supportedFormats', { formats: supportedAvatarExtensions.join(', ') })}
               </div>
             </Col>
             <Col>
@@ -124,18 +126,18 @@ const ProfileForm = ({ profile, onSubmit, isSaving }) => {
               </Form.Group>
 
               <Form.Group className="mb-3" controlId="profile-full-name">
-                <Form.Label>Полное имя</Form.Label>
+                <Form.Label>{t('profile.fullName')}</Form.Label>
                 <Form.Control
                   value={form.full_name}
                   onChange={(event) => updateField('full_name', event.target.value)}
-                  placeholder="Ваше полное имя"
+                  placeholder={t('profile.fullNamePlaceholder')}
                 />
               </Form.Group>
 
               <div className="text-end">
                 <Button type="submit" variant="primary" disabled={isSaving}>
                   <Save className="me-2" />
-                  {isSaving ? 'Сохранение...' : 'Сохранить профиль'}
+                  {isSaving ? t('common.saving') : t('profile.saveProfile')}
                 </Button>
               </div>
             </Col>

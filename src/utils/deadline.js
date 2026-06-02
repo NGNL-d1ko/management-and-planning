@@ -1,20 +1,31 @@
-const dateFormatter = new Intl.DateTimeFormat('ru-RU', {
+const localeByLanguage = {
+  ru: 'ru-RU',
+  en: 'en-US',
+  kk: 'kk-KZ',
+};
+
+const createDateFormatter = (language, options) => new Intl.DateTimeFormat(
+  localeByLanguage[language] || localeByLanguage.ru,
+  options,
+);
+
+const dateFormatter = createDateFormatter('ru', {
   day: 'numeric',
   month: 'short',
   year: 'numeric',
 });
 
-const shortDateFormatter = new Intl.DateTimeFormat('ru-RU', {
+const shortDateFormatter = createDateFormatter('ru', {
   day: 'numeric',
   month: 'short',
 });
 
-const timeFormatter = new Intl.DateTimeFormat('ru-RU', {
+const timeFormatter = createDateFormatter('ru', {
   hour: '2-digit',
   minute: '2-digit',
 });
 
-const dateTimeFormatter = new Intl.DateTimeFormat('ru-RU', {
+const dateTimeFormatter = createDateFormatter('ru', {
   day: 'numeric',
   month: 'short',
   year: 'numeric',
@@ -110,21 +121,39 @@ export const isTaskOverdue = (task, now = new Date()) => (
 );
 
 export const formatTaskDeadline = (task, options = {}) => {
-  const { short = false } = options;
+  const { language = 'ru', noDueLabel = 'Без срока', short = false } = options;
+  const localizedShortDateFormatter = language === 'ru'
+    ? shortDateFormatter
+    : createDateFormatter(language, { day: 'numeric', month: 'short' });
+  const localizedDateFormatter = language === 'ru'
+    ? dateFormatter
+    : createDateFormatter(language, { day: 'numeric', month: 'short', year: 'numeric' });
+  const localizedTimeFormatter = language === 'ru'
+    ? timeFormatter
+    : createDateFormatter(language, { hour: '2-digit', minute: '2-digit' });
+  const localizedDateTimeFormatter = language === 'ru'
+    ? dateTimeFormatter
+    : createDateFormatter(language, {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
 
   if (task?.due_at) {
     const date = new Date(task.due_at);
     if (!Number.isNaN(date.getTime())) {
       return short
-        ? `${shortDateFormatter.format(date)}, ${timeFormatter.format(date)}`
-        : dateTimeFormatter.format(date);
+        ? `${localizedShortDateFormatter.format(date)}, ${localizedTimeFormatter.format(date)}`
+        : localizedDateTimeFormatter.format(date);
     }
   }
 
   if (task?.due_date) {
     const date = new Date(`${task.due_date}T00:00:00`);
-    return short ? shortDateFormatter.format(date) : dateFormatter.format(date);
+    return short ? localizedShortDateFormatter.format(date) : localizedDateFormatter.format(date);
   }
 
-  return 'Без срока';
+  return noDueLabel;
 };

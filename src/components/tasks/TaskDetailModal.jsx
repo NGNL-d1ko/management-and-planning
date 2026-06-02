@@ -200,7 +200,7 @@ const TaskDetailModal = ({
                       <option value="backlog">Очередь</option>
                       <option value="todo">К выполнению</option>
                       <option value="in_progress">В работе</option>
-                      <option value="done">Готово</option>
+                      <option value="done">Выполнено</option>
                     </Form.Select>
                   </Form.Group>
                 </Col>

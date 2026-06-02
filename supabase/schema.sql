@@ -22,14 +22,22 @@ create table if not exists public.profiles (
 create table if not exists public.user_settings (
   user_id uuid primary key references auth.users(id) on delete cascade,
   theme text default 'light',
+  language text default 'ru',
+  timezone text default 'UTC',
+  notifications jsonb default '{"email": false, "desktop": false, "taskReminders": true}'::jsonb,
   default_view text default 'dashboard',
   week_starts_on text default 'monday',
   created_at timestamptz default now(),
   updated_at timestamptz default now(),
   constraint user_settings_theme_check check (theme in ('light', 'dark')),
+  constraint user_settings_language_check check (language in ('ru', 'en', 'kk')),
   constraint user_settings_default_view_check check (default_view in ('dashboard', 'projects', 'calendar', 'analytics')),
   constraint user_settings_week_starts_on_check check (week_starts_on in ('monday', 'sunday'))
 );
+
+alter table public.user_settings add column if not exists language text default 'ru';
+alter table public.user_settings add column if not exists timezone text default 'UTC';
+alter table public.user_settings add column if not exists notifications jsonb default '{"email": false, "desktop": false, "taskReminders": true}'::jsonb;
 
 create table if not exists public.projects (
   id uuid primary key default gen_random_uuid(),

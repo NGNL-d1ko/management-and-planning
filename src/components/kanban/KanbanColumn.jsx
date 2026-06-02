@@ -3,6 +3,7 @@ import { Badge, Button, Card, Form, InputGroup } from 'react-bootstrap';
 import { PlusLg } from 'react-bootstrap-icons';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useDroppable } from '@dnd-kit/core';
+import { useLanguage } from '../../context/LanguageContext';
 import EmptyState from '../ui/EmptyState';
 import KanbanCard from './KanbanCard';
 
@@ -14,6 +15,7 @@ const KanbanColumn = ({
   onAddTask,
   onTaskClick,
 }) => {
+  const { t } = useLanguage();
   const [taskTitle, setTaskTitle] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const { setNodeRef, isOver } = useDroppable({
@@ -62,8 +64,8 @@ const KanbanColumn = ({
             <Form.Control
               value={taskTitle}
               onChange={(event) => setTaskTitle(event.target.value)}
-              placeholder="Быстро добавить задачу"
-              aria-label={`Добавить задачу в ${title}`}
+              placeholder={t('kanban.quickAdd')}
+              aria-label={t('kanban.addTaskTo', { column: title })}
               disabled={isAdding}
             />
             <Button type="submit" variant="primary" disabled={isAdding || !taskTitle.trim()}>
@@ -75,8 +77,8 @@ const KanbanColumn = ({
         <SortableContext items={tasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
           {tasks.length === 0 ? (
             <EmptyState
-              title="Нет задач"
-              description="Перетащите задачу сюда или используйте быстрое добавление выше."
+              title={t('kanban.emptyTitle')}
+              description={t('kanban.emptyDescription')}
               framed={false}
             />
           ) : (
@@ -90,7 +92,7 @@ const KanbanColumn = ({
 
         {hiddenCompletedCount > 0 && (
           <div className="kanban-column-note small text-muted text-center mt-auto">
-            Старые готовые: {hiddenCompletedCount}
+            {t('kanban.hiddenCompleted', { count: hiddenCompletedCount })}
           </div>
         )}
       </Card.Body>

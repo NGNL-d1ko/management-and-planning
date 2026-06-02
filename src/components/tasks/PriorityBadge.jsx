@@ -1,4 +1,5 @@
 import { Badge } from 'react-bootstrap';
+import { useLanguage } from '../../context/LanguageContext';
 
 const priorityVariant = {
   low: 'secondary',
@@ -7,17 +8,15 @@ const priorityVariant = {
   urgent: 'danger',
 };
 
-const priorityLabel = {
-  low: 'Низкий',
-  medium: 'Средний',
-  high: 'Высокий',
-  urgent: 'Срочный',
-};
+const PriorityBadge = ({ priority }) => {
+  const { t } = useLanguage();
+  const normalizedPriority = priority || 'medium';
 
-const PriorityBadge = ({ priority }) => (
-  <Badge bg={priorityVariant[priority] || 'info'}>
-    {priorityLabel[priority] || 'Средний'}
-  </Badge>
-);
+  return (
+    <Badge bg={priorityVariant[normalizedPriority] || 'info'}>
+      {t(`priority.${normalizedPriority}`)}
+    </Badge>
+  );
+};
 
 export default PriorityBadge;

@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Alert, Button, Card, Container, Form, Spinner } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const ForgotPasswordPage = () => {
   const { requestPasswordReset } = useAuth();
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
@@ -15,7 +17,7 @@ const ForgotPasswordPage = () => {
     const targetEmail = email.trim().toLowerCase();
 
     if (!targetEmail) {
-      setFormError('Введите email.');
+      setFormError(t('auth.forgotEmailRequired'));
       return;
     }
 
@@ -25,9 +27,9 @@ const ForgotPasswordPage = () => {
 
     try {
       await requestPasswordReset(targetEmail);
-      setNotice(`Письмо для восстановления пароля отправлено на ${targetEmail}.`);
+      setNotice(t('auth.forgotSent', { email: targetEmail }));
     } catch (resetError) {
-      setFormError(resetError.message || 'Не удалось отправить письмо для восстановления пароля.');
+      setFormError(resetError.message || t('auth.forgotError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -38,8 +40,8 @@ const ForgotPasswordPage = () => {
       <Card className="shadow-sm border-0 w-100" style={{ maxWidth: '440px' }}>
         <Card.Body className="p-4 p-md-5">
           <div className="text-center mb-4">
-            <h1 className="h3 fw-bold mb-2">Восстановление пароля</h1>
-            <p className="text-muted mb-0">Мы отправим ссылку для создания нового пароля.</p>
+            <h1 className="h3 fw-bold mb-2">{t('auth.forgotTitle')}</h1>
+            <p className="text-muted mb-0">{t('auth.forgotSubtitle')}</p>
           </div>
 
           {formError && (
@@ -71,17 +73,17 @@ const ForgotPasswordPage = () => {
               {isSubmitting ? (
                 <>
                   <Spinner animation="border" size="sm" className="me-2" />
-                  Отправка...
+                  {t('auth.sending')}
                 </>
               ) : (
-                'Отправить ссылку'
+                t('auth.forgotSubmit')
               )}
             </Button>
           </Form>
 
           <div className="text-center mt-4">
             <Link to="/login" className="text-decoration-none">
-              Вернуться ко входу
+              {t('common.backToLogin')}
             </Link>
           </div>
         </Card.Body>

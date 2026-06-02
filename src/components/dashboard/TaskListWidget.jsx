@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Badge, Button, Card, ListGroup } from 'react-bootstrap';
+import { useLanguage } from '../../context/LanguageContext';
 import { formatTaskDeadline } from '../../utils/deadline';
 import EmptyState from '../ui/EmptyState';
 
@@ -10,13 +11,6 @@ const priorityVariant = {
   urgent: 'danger',
 };
 
-const priorityLabel = {
-  low: 'Низкий',
-  medium: 'Средний',
-  high: 'Высокий',
-  urgent: 'Срочный',
-};
-
 const visibleTaskLimit = 2;
 
 const TaskListWidget = ({
@@ -25,6 +19,7 @@ const TaskListWidget = ({
   emptyMessage,
   danger = false,
 }) => {
+  const { language, t } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(false);
   const hasOverflow = tasks.length >= 3;
   const visibleTasks = hasOverflow && !isExpanded
@@ -53,11 +48,15 @@ const TaskListWidget = ({
                         )}
                       </div>
                       <Badge bg={priorityVariant[task.priority] || 'secondary'}>
-                        {priorityLabel[task.priority] || 'Средний'}
+                        {t(`priority.${task.priority || 'medium'}`)}
                       </Badge>
                     </div>
                     <div className={`small mt-2 ${danger ? 'text-danger' : 'text-muted'}`}>
-                      Срок: {formatTaskDeadline(task, { short: true })}
+                      {t('dashboard.due')}: {formatTaskDeadline(task, {
+                        language,
+                        noDueLabel: t('common.noDate'),
+                        short: true,
+                      })}
                     </div>
                   </ListGroup.Item>
                 ))}
@@ -72,7 +71,7 @@ const TaskListWidget = ({
                     className="text-decoration-none"
                     onClick={() => setIsExpanded((current) => !current)}
                   >
-                    {isExpanded ? 'Показать меньше' : 'Показать ещё'}
+                    {isExpanded ? t('dashboard.showLess') : t('dashboard.showMore')}
                   </Button>
                 </div>
               )}

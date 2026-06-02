@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Alert, Button, Col, Form, Modal, Row, Spinner } from 'react-bootstrap';
+import { useLanguage } from '../../context/LanguageContext';
 import { combineDateAndTime, getTimeFromDueAt } from '../../utils/deadline';
 
 const initialForm = {
@@ -17,6 +18,7 @@ const TaskFormModal = ({
   onHide,
   onSubmit,
 }) => {
+  const { t } = useLanguage();
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,11 +47,11 @@ const TaskFormModal = ({
 
   const validate = () => {
     if (!form.title.trim()) {
-      return 'Название задачи обязательно.';
+      return t('tasks.titleRequired');
     }
 
     if (form.title.trim().length > 200) {
-      return 'Название задачи должно содержать не более 200 символов.';
+      return t('tasks.titleTooLong');
     }
 
     return '';
@@ -80,7 +82,7 @@ const TaskFormModal = ({
       await onSubmit(payload);
       onHide();
     } catch (submitError) {
-      setError(submitError.message || 'Не удалось сохранить задачу.');
+      setError(submitError.message || t('tasks.saveError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -90,13 +92,13 @@ const TaskFormModal = ({
     <Modal show={show} onHide={onHide} centered size="lg">
       <Form onSubmit={handleSubmit}>
         <Modal.Header closeButton>
-          <Modal.Title>{task ? 'Редактировать задачу' : 'Новая задача'}</Modal.Title>
+          <Modal.Title>{task ? t('tasks.editTask') : t('tasks.newTask')}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {error && <Alert variant="danger">{error}</Alert>}
 
           <Form.Group className="mb-3" controlId="task-title">
-            <Form.Label>Название</Form.Label>
+            <Form.Label>{t('tasks.titleLabel')}</Form.Label>
             <Form.Control
               value={form.title}
               maxLength={200}
@@ -106,7 +108,7 @@ const TaskFormModal = ({
           </Form.Group>
 
           <Form.Group className="mb-3" controlId="task-description">
-            <Form.Label>Описание</Form.Label>
+            <Form.Label>{t('tasks.descriptionLabel')}</Form.Label>
             <Form.Control
               as="textarea"
               rows={3}
@@ -118,23 +120,23 @@ const TaskFormModal = ({
           <Row>
             <Col md={6}>
               <Form.Group className="mb-3" controlId="task-status">
-                <Form.Label>Статус</Form.Label>
+                <Form.Label>{t('tasks.statusLabel')}</Form.Label>
                 <Form.Select value={form.status} onChange={(event) => updateField('status', event.target.value)}>
-                  <option value="backlog">Очередь</option>
-                  <option value="todo">К выполнению</option>
-                  <option value="in_progress">В работе</option>
-                  <option value="done">Готово</option>
+                  <option value="backlog">{t('status.backlog')}</option>
+                  <option value="todo">{t('status.todo')}</option>
+                  <option value="in_progress">{t('status.in_progress')}</option>
+                  <option value="done">{t('status.done')}</option>
                 </Form.Select>
               </Form.Group>
             </Col>
             <Col md={6}>
               <Form.Group className="mb-3" controlId="task-priority">
-                <Form.Label>Приоритет</Form.Label>
+                <Form.Label>{t('tasks.priorityLabel')}</Form.Label>
                 <Form.Select value={form.priority} onChange={(event) => updateField('priority', event.target.value)}>
-                  <option value="low">Низкий</option>
-                  <option value="medium">Средний</option>
-                  <option value="high">Высокий</option>
-                  <option value="urgent">Срочный</option>
+                  <option value="low">{t('priority.low')}</option>
+                  <option value="medium">{t('priority.medium')}</option>
+                  <option value="high">{t('priority.high')}</option>
+                  <option value="urgent">{t('priority.urgent')}</option>
                 </Form.Select>
               </Form.Group>
             </Col>
@@ -143,7 +145,7 @@ const TaskFormModal = ({
           <Row>
             <Col md={6}>
               <Form.Group className="mb-3" controlId="task-due-date">
-                <Form.Label>Срок выполнения</Form.Label>
+                <Form.Label>{t('tasks.dueDateLabel')}</Form.Label>
                 <Form.Control
                   type="date"
                   value={form.due_date}
@@ -153,7 +155,7 @@ const TaskFormModal = ({
             </Col>
             <Col md={6}>
               <Form.Group className="mb-3" controlId="task-due-time">
-                <Form.Label>Время дедлайна</Form.Label>
+                <Form.Label>{t('tasks.dueTimeLabel')}</Form.Label>
                 <Form.Control
                   type="time"
                   value={form.due_time}
@@ -166,16 +168,16 @@ const TaskFormModal = ({
         </Modal.Body>
         <Modal.Footer>
           <Button type="button" variant="outline-secondary" onClick={onHide} disabled={isSubmitting}>
-            Отмена
+            {t('common.cancel')}
           </Button>
           <Button type="submit" variant="primary" disabled={isSubmitting}>
             {isSubmitting ? (
               <>
                 <Spinner animation="border" size="sm" className="me-2" />
-                Сохранение...
+                {t('common.saving')}
               </>
             ) : (
-              'Сохранить задачу'
+              t('tasks.saveTask')
             )}
           </Button>
         </Modal.Footer>

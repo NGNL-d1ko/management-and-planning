@@ -247,6 +247,23 @@ aside {
   font-size: 0.875rem;
 }
 
+.ym-language-toggle {
+  min-width: 76px;
+  justify-content: center;
+}
+
+@media (max-width: 575.98px) {
+  .ym-topbar .ym-language-toggle {
+    min-width: 48px;
+    padding-left: 0.55rem;
+    padding-right: 0.55rem;
+  }
+
+  .ym-topbar .ym-language-toggle svg {
+    display: none;
+  }
+}
+
 
 /* ── 6. Cards ─────────────────────────────────────────────────── */
 

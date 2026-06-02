@@ -2,12 +2,14 @@ import { Button, Dropdown } from 'react-bootstrap';
 import { BoxArrowRight, List, PersonCircle } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
+import LanguageSelect from './LanguageSelect';
 
-const getDisplayName = (user) => (
+const getDisplayName = (user, fallback) => (
   user?.user_metadata?.full_name ||
   user?.user_metadata?.name ||
   user?.email ||
-  'Пользователь'
+  fallback
 );
 
 const Topbar = ({
@@ -16,7 +18,8 @@ const Topbar = ({
 }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const displayName = getDisplayName(user);
+  const { t } = useLanguage();
+  const displayName = getDisplayName(user, t('common.user'));
 
   const handleLogout = async () => {
     await logout();
@@ -31,7 +34,7 @@ const Topbar = ({
           variant="outline-secondary"
           className="d-lg-none"
           onClick={onMenuClick}
-          aria-label="Открыть навигацию"
+          aria-label={t('layout.openNavigation')}
         >
           <List size={20} />
         </Button>
@@ -41,23 +44,27 @@ const Topbar = ({
         </div>
       </div>
 
-      <Dropdown align="end">
-        <Dropdown.Toggle
-          variant="outline-secondary"
-          className="d-flex align-items-center gap-2"
-        >
-          <PersonCircle size={18} />
-          <span className="d-none d-sm-inline">{displayName}</span>
-        </Dropdown.Toggle>
-        <Dropdown.Menu>
-          <Dropdown.Header>{displayName}</Dropdown.Header>
-          <Dropdown.Divider />
+      <div className="d-flex align-items-center gap-2">
+        <LanguageSelect />
+
+        <Dropdown align="end">
+          <Dropdown.Toggle
+            variant="outline-secondary"
+            className="d-flex align-items-center gap-2"
+          >
+            <PersonCircle size={18} />
+            <span className="d-none d-sm-inline">{displayName}</span>
+          </Dropdown.Toggle>
+          <Dropdown.Menu>
+            <Dropdown.Header>{displayName}</Dropdown.Header>
+            <Dropdown.Divider />
           <Dropdown.Item onClick={handleLogout}>
             <BoxArrowRight className="me-2" />
-            Выйти
+            {t('layout.logout')}
           </Dropdown.Item>
-        </Dropdown.Menu>
-      </Dropdown>
+          </Dropdown.Menu>
+        </Dropdown>
+      </div>
     </header>
   );
 };

@@ -3,10 +3,15 @@ import { Alert, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import * as profileApi from '../api/profileApi';
 import SettingsForm from '../components/settings/SettingsForm';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import useSettings from '../hooks/useSettings';
 
 const NOTIFICATION_SETTINGS_KEY = 'map_notification_settings';
+const getDetectedTimezone = () => (
+  Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+);
 
 const applyBodyTheme = (theme) => {
   document.body.classList.remove('theme-light', 'theme-dark');
@@ -29,13 +34,18 @@ const getNotificationSettings = () => {
   }
 };
 
-const saveNotificationSettings = (settings) => {
-  localStorage.setItem(NOTIFICATION_SETTINGS_KEY, JSON.stringify(settings));
+const getNotificationPermission = () => {
+  if (!('Notification' in window)) {
+    return 'unsupported';
+  }
+
+  return Notification.permission;
 };
 
 const SettingsPage = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const { setLanguage, t } = useLanguage();
   const {
     settings,
     isLoading,
@@ -44,8 +54,11 @@ const SettingsPage = () => {
   } = useSettings();
   const [isSaving, setIsSaving] = useState(false);
   const [isDeletingProfile, setIsDeletingProfile] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [message, setMessage] = useState(null);
-  const [notificationSettings, setNotificationSettings] = useState(getNotificationSettings);
+  const [notificationPermission, setNotificationPermission] = useState(getNotificationPermission);
+  const [detectedTimezone] = useState(getDetectedTimezone);
+  const [legacyNotificationSettings] = useState(getNotificationSettings);
 
   useEffect(() => {
     if (settings?.theme) {
@@ -53,36 +66,50 @@ const SettingsPage = () => {
     }
   }, [settings?.theme]);
 
+  useEffect(() => {
+    if (settings?.language) {
+      setLanguage(settings.language);
+    }
+  }, [setLanguage, settings?.language]);
+
   const handleSubmit = async (data) => {
     setIsSaving(true);
     setMessage(null);
 
     try {
-      let desktopNotifications = data.desktopNotifications;
+      let nextNotifications = data.notifications;
 
-      if (data.desktopNotifications && 'Notification' in window && Notification.permission === 'default') {
-        desktopNotifications = await Notification.requestPermission() === 'granted';
-      } else if (data.desktopNotifications && 'Notification' in window) {
-        desktopNotifications = Notification.permission === 'granted';
+      if (nextNotifications.desktop && notificationPermission === 'default') {
+        const permission = await Notification.requestPermission();
+        setNotificationPermission(permission);
+        nextNotifications = {
+          ...nextNotifications,
+          desktop: permission === 'granted',
+        };
+      } else if (nextNotifications.desktop && notificationPermission !== 'granted') {
+        nextNotifications = {
+          ...nextNotifications,
+          desktop: false,
+        };
       }
 
-      const nextNotificationSettings = {
-        desktopNotifications,
-        emailNotifications: data.emailNotifications,
-      };
-
-      const updatedSettings = await updateSettings({ theme: data.theme });
-      saveNotificationSettings(nextNotificationSettings);
-      setNotificationSettings(nextNotificationSettings);
+      const updatedSettings = await updateSettings({
+        theme: data.theme,
+        language: data.language,
+        timezone: data.timezone || detectedTimezone,
+        notifications: nextNotifications,
+      });
       applyBodyTheme(updatedSettings.theme);
+      setLanguage(updatedSettings.language || data.language);
+      localStorage.removeItem(NOTIFICATION_SETTINGS_KEY);
       setMessage({
         variant: 'success',
-        text: 'Настройки сохранены.',
+        text: t('settings.saved'),
       });
     } catch (saveError) {
       setMessage({
         variant: 'danger',
-        text: saveError.message || 'Не удалось сохранить настройки.',
+        text: saveError.message || t('settings.saveError'),
       });
     } finally {
       setIsSaving(false);
@@ -90,12 +117,6 @@ const SettingsPage = () => {
   };
 
   const handleDeleteProfile = async () => {
-    const confirmed = window.confirm('Удалить профиль? Это действие нельзя отменить.');
-
-    if (!confirmed) {
-      return;
-    }
-
     setIsDeletingProfile(true);
     setMessage(null);
 
@@ -106,9 +127,11 @@ const SettingsPage = () => {
     } catch (deleteError) {
       setMessage({
         variant: 'danger',
-        text: deleteError.message || 'Не удалось удалить профиль.',
+        text: deleteError.message || t('settings.deleteError'),
       });
       setIsDeletingProfile(false);
+    } finally {
+      setIsDeleteDialogOpen(false);
     }
   };
 
@@ -116,7 +139,7 @@ const SettingsPage = () => {
     return (
       <div className="text-center py-5">
         <Spinner animation="border" role="status" variant="primary">
-          <span className="visually-hidden">Загрузка настроек...</span>
+          <span className="visually-hidden">{t('settings.loading')}</span>
         </Spinner>
       </div>
     );
@@ -125,8 +148,8 @@ const SettingsPage = () => {
   return (
     <div>
       <div className="mb-4">
-        <h1 className="h2 mb-1">Настройки</h1>
-        <p className="text-muted mb-0">Измените тему интерфейса, уведомления и профиль.</p>
+        <h1 className="h2 mb-1">{t('settings.title')}</h1>
+        <p className="text-muted mb-0">{t('settings.subtitle')}</p>
       </div>
 
       {error && <Alert variant="danger">{error}</Alert>}
@@ -137,15 +160,34 @@ const SettingsPage = () => {
       )}
 
       <SettingsForm
-        key={`${settings?.updated_at || settings?.user_id}-${JSON.stringify(notificationSettings)}`}
+        key={`${settings?.updated_at || settings?.user_id}-${settings?.language || ''}-${settings?.timezone || ''}`}
         settings={{
           ...settings,
-          ...notificationSettings,
+          notifications: settings?.notifications || {
+            desktop: legacyNotificationSettings.desktopNotifications,
+            email: legacyNotificationSettings.emailNotifications,
+            taskReminders: true,
+          },
         }}
+        detectedTimezone={detectedTimezone}
+        notificationPermission={notificationPermission}
         onSubmit={handleSubmit}
+        onLanguagePreview={setLanguage}
         isSaving={isSaving}
-        onDeleteProfile={handleDeleteProfile}
+        onDeleteProfile={() => setIsDeleteDialogOpen(true)}
         isDeletingProfile={isDeletingProfile}
+      />
+
+      <ConfirmDialog
+        show={isDeleteDialogOpen}
+        title={t('settings.deleteProfile')}
+        message={t('settings.deleteConfirm')}
+        confirmLabel={isDeletingProfile ? t('common.deleting') : t('settings.deleteProfileAction')}
+        cancelLabel={t('common.cancel')}
+        variant="danger"
+        confirmDisabled={isDeletingProfile}
+        onConfirm={handleDeleteProfile}
+        onCancel={() => setIsDeleteDialogOpen(false)}
       />
     </div>
   );

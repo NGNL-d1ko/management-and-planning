@@ -1,4 +1,5 @@
 import { ExclamationTriangleFill } from 'react-bootstrap-icons';
+import { useLanguage } from '../../context/LanguageContext';
 import { getTimeFromDueAt, isTaskOverdue } from '../../utils/deadline';
 
 const priorityClass = {
@@ -8,17 +9,12 @@ const priorityClass = {
   urgent: 'calendar-priority-urgent',
 };
 
-const statusLabel = {
-  backlog: 'Очередь',
-  todo: 'К выполнению',
-  in_progress: 'В работе',
-  done: 'Готово',
-};
-
 const CalendarTaskEvent = ({ event }) => {
+  const { t } = useLanguage();
   const task = event.resource;
   const overdue = isTaskOverdue(task);
   const dueTime = getTimeFromDueAt(task.due_at);
+  const status = task.status || 'todo';
 
   return (
     <div className="calendar-task-event">
@@ -28,8 +24,8 @@ const CalendarTaskEvent = ({ event }) => {
         {overdue && <ExclamationTriangleFill className="calendar-task-event__warning" size={12} />}
       </div>
       <div className="calendar-task-event__meta">
-        <span className={`calendar-status-dot calendar-status-${task.status || 'todo'}`} />
-        <span>{statusLabel[task.status] || task.status || 'К выполнению'}</span>
+        <span className={`calendar-status-dot calendar-status-${status}`} />
+        <span>{t(`status.${status}`)}</span>
         {dueTime && <span>{dueTime}</span>}
       </div>
     </div>

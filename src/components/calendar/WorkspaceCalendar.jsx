@@ -3,6 +3,7 @@ import { format, getDay, parse, startOfWeek } from 'date-fns';
 import { Calendar, dateFnsLocalizer, Views } from 'react-big-calendar';
 import { Alert, Card, Spinner } from 'react-bootstrap';
 import * as tasksApi from '../../api/tasksApi';
+import { useLanguage } from '../../context/LanguageContext';
 import { onTasksChanged } from '../../lib/dataEvents';
 import { getViewCache, hasViewCache, setViewCache } from '../../lib/viewCache';
 import { getTaskDeadlineDate, isTaskOverdue } from '../../utils/deadline';
@@ -27,20 +28,6 @@ const statusColor = {
   done: '#198754',
 };
 
-const messages = {
-  today: 'Сегодня',
-  previous: 'Назад',
-  next: 'Вперёд',
-  month: 'Месяц',
-  week: 'Неделя',
-  day: 'День',
-  agenda: 'Повестка',
-  date: 'Дата',
-  time: 'Время',
-  event: 'Задача',
-  noEventsInRange: 'В этом периоде задач нет.',
-};
-
 const toDateValue = (date) => format(date, 'yyyy-MM-dd');
 const CALENDAR_TASKS_CACHE_KEY = 'tasks:all:{}';
 
@@ -54,6 +41,7 @@ const getTaskEventEndDate = (task) => {
 };
 
 const WorkspaceCalendar = () => {
+  const { t } = useLanguage();
   const mountedRef = useRef(false);
   const [tasks, setTasks] = useState(() => getViewCache(CALENDAR_TASKS_CACHE_KEY) || []);
   const [isLoading, setIsLoading] = useState(() => !hasViewCache(CALENDAR_TASKS_CACHE_KEY));
@@ -83,14 +71,28 @@ const WorkspaceCalendar = () => {
       }
     } catch (fetchError) {
       if (mountedRef.current) {
-        setError(fetchError.message || 'Не удалось загрузить данные календаря.');
+        setError(fetchError.message || t('calendar.loadError'));
       }
     } finally {
       if (mountedRef.current) {
         setIsLoading(false);
       }
     }
-  }, []);
+  }, [t]);
+
+  const messages = useMemo(() => ({
+    today: t('calendar.today'),
+    previous: t('calendar.previous'),
+    next: t('calendar.next'),
+    month: t('calendar.month'),
+    week: t('calendar.week'),
+    day: t('calendar.day'),
+    agenda: t('calendar.agenda'),
+    date: t('calendar.date'),
+    time: t('calendar.time'),
+    event: t('calendar.event'),
+    noEventsInRange: t('calendar.noEventsInRange'),
+  }), [t]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -155,7 +157,7 @@ const WorkspaceCalendar = () => {
     return (
       <div className="text-center py-5">
         <Spinner animation="border" role="status" variant="primary">
-          <span className="visually-hidden">Загрузка календаря...</span>
+          <span className="visually-hidden">{t('calendar.loading')}</span>
         </Spinner>
       </div>
     );

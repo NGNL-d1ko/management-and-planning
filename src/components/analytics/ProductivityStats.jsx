@@ -1,11 +1,18 @@
 import { Card, Col, ListGroup, Row } from 'react-bootstrap';
+import { useLanguage } from '../../context/LanguageContext';
 
-const formatDate = (date) => {
+const localeByLanguage = {
+  ru: 'ru-RU',
+  en: 'en-US',
+  kk: 'kk-KZ',
+};
+
+const formatDate = (date, language, emptyLabel) => {
   if (!date) {
-    return 'Завершённых задач пока нет';
+    return emptyLabel;
   }
 
-  return new Date(`${date}T00:00:00`).toLocaleDateString('ru-RU', {
+  return new Date(`${date}T00:00:00`).toLocaleDateString(localeByLanguage[language] || 'ru-RU', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -13,19 +20,20 @@ const formatDate = (date) => {
 };
 
 const ProductivityStats = ({ analytics }) => {
+  const { language, t } = useLanguage();
   const stats = [
     {
-      label: 'Самый продуктивный день',
-      value: `${formatDate(analytics?.mostProductiveDay?.date)}${
+      label: t('analytics.bestDay'),
+      value: `${formatDate(analytics?.mostProductiveDay?.date, language, t('analytics.noCompleted'))}${
         analytics?.mostProductiveDay?.count ? ` (${analytics.mostProductiveDay.count})` : ''
       }`,
     },
     {
-      label: 'В среднем выполнено задач в день',
+      label: t('analytics.avgCompleted'),
       value: Number(analytics?.averageTasksCompletedPerDay || 0).toFixed(2),
     },
     {
-      label: 'Процент выполнения',
+      label: t('dashboard.completionRate'),
       value: `${analytics?.completionRate || 0}%`,
     },
   ];
@@ -33,7 +41,7 @@ const ProductivityStats = ({ analytics }) => {
   return (
     <Card className="border-0 shadow-sm">
       <Card.Header className="bg-transparent border-0 pb-0">
-        <Card.Title className="h5 mb-0">Статистика продуктивности</Card.Title>
+        <Card.Title className="h5 mb-0">{t('analytics.productivityTitle')}</Card.Title>
       </Card.Header>
       <Card.Body>
         <Row>

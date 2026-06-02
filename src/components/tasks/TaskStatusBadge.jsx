@@ -1,4 +1,5 @@
 import { Badge } from 'react-bootstrap';
+import { useLanguage } from '../../context/LanguageContext';
 
 const statusVariant = {
   backlog: 'secondary',
@@ -7,17 +8,15 @@ const statusVariant = {
   done: 'success',
 };
 
-const statusLabel = {
-  backlog: 'Очередь',
-  todo: 'К выполнению',
-  in_progress: 'В работе',
-  done: 'Готово',
-};
+const TaskStatusBadge = ({ status }) => {
+  const { t } = useLanguage();
+  const normalizedStatus = status || 'todo';
 
-const TaskStatusBadge = ({ status }) => (
-  <Badge bg={statusVariant[status] || 'secondary'}>
-    {statusLabel[status] || 'К выполнению'}
-  </Badge>
-);
+  return (
+    <Badge bg={statusVariant[normalizedStatus] || 'secondary'}>
+      {t(`status.${normalizedStatus}`)}
+    </Badge>
+  );
+};
 
 export default TaskStatusBadge;

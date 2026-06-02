@@ -9,9 +9,11 @@ import DashboardHeader from '../components/dashboard/DashboardHeader';
 import SummaryCard from '../components/dashboard/SummaryCard';
 import TaskListWidget from '../components/dashboard/TaskListWidget';
 import SkeletonCard from '../components/ui/SkeletonCard';
+import { useLanguage } from '../context/LanguageContext';
 import useDashboard from '../hooks/useDashboard';
 
 const DashboardPage = () => {
+  const { t } = useLanguage();
   const { dashboard, isLoading, error } = useDashboard();
 
   if (isLoading) {
@@ -39,7 +41,7 @@ const DashboardPage = () => {
     return (
       <>
         <DashboardHeader />
-        <Alert variant="info">Данные главной страницы пока недоступны.</Alert>
+        <Alert variant="info">{t('dashboard.unavailable')}</Alert>
       </>
     );
   }
@@ -50,39 +52,39 @@ const DashboardPage = () => {
 
       <Row className="g-3 mb-4">
         <Col xs={12} sm={6} xl={3}>
-          <SummaryCard title="Всего задач" value={dashboard.totalTasks} icon={ListTask} variant="info" />
+          <SummaryCard title={t('dashboard.totalTasks')} value={dashboard.totalTasks} icon={ListTask} variant="info" />
         </Col>
         <Col xs={12} sm={6} xl={3}>
-          <SummaryCard title="Завершено задач" value={dashboard.completedTasks} icon={CheckCircle} variant="success" />
+          <SummaryCard title={t('dashboard.completedTasks')} value={dashboard.completedTasks} icon={CheckCircle} variant="success" />
         </Col>
         <Col xs={12} sm={6} xl={3}>
-          <SummaryCard title="Просрочено задач" value={dashboard.overdueTasks} icon={ExclamationTriangle} variant="danger" />
+          <SummaryCard title={t('dashboard.overdueTasks')} value={dashboard.overdueTasks} icon={ExclamationTriangle} variant="danger" />
         </Col>
         <Col xs={12} sm={6} xl={3}>
-          <SummaryCard title="Процент выполнения" value={dashboard.completionRate} suffix="%" icon={ClipboardCheck} variant="primary" />
+          <SummaryCard title={t('dashboard.completionRate')} value={dashboard.completionRate} suffix="%" icon={ClipboardCheck} variant="primary" />
         </Col>
       </Row>
 
       <Row className="g-4 align-items-start">
         <Col xs={12} xl={4}>
           <TaskListWidget
-            title="Сегодня"
+            title={t('dashboard.today')}
             tasks={dashboard.tasksDueToday}
-            emptyMessage="На сегодня задач нет."
+            emptyMessage={t('dashboard.todayEmpty')}
           />
         </Col>
         <Col xs={12} xl={4}>
           <TaskListWidget
-            title="Ближайшие задачи"
+            title={t('dashboard.upcoming')}
             tasks={dashboard.upcomingTasks}
-            emptyMessage="Ближайших задач нет."
+            emptyMessage={t('dashboard.upcomingEmpty')}
           />
         </Col>
         <Col xs={12} xl={4}>
           <TaskListWidget
-            title="Просрочено"
+            title={t('dashboard.overdue')}
             tasks={dashboard.overdueTaskList}
-            emptyMessage="Просроченных задач нет."
+            emptyMessage={t('dashboard.overdueEmpty')}
             danger
           />
         </Col>

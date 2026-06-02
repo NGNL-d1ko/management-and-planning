@@ -3,12 +3,14 @@ import { Alert, Button, Card, Container, Form, Spinner } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import PasswordField from '../components/auth/PasswordField';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const RegisterPage = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
+  const { t } = useLanguage();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,16 +20,16 @@ const RegisterPage = () => {
 
   const validateForm = () => {
     if (!fullName.trim()) {
-      return 'Введите имя.';
+      return t('auth.registerNameRequired');
     }
     if (!emailPattern.test(email)) {
-      return 'Введите корректный email.';
+      return t('auth.registerEmailInvalid');
     }
     if (password.length < 6) {
-      return 'Пароль должен содержать минимум 6 символов.';
+      return t('auth.passwordMinError');
     }
     if (password !== confirmPassword) {
-      return 'Пароли не совпадают.';
+      return t('auth.passwordMismatch');
     }
     return '';
   };
@@ -55,7 +57,7 @@ const RegisterPage = () => {
 
       navigate('/app/dashboard');
     } catch (registerError) {
-      setFormError(registerError.message || 'Не удалось зарегистрироваться.');
+      setFormError(registerError.message || t('auth.registerError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -67,7 +69,7 @@ const RegisterPage = () => {
         <Card.Body className="p-4 p-md-5">
           <div className="text-center mb-4">
             <h1 className="h3 fw-bold mb-2">your MaP</h1>
-            <p className="text-muted mb-0">Управление и планирование</p>
+            <p className="text-muted mb-0">{t('common.appSubtitle')}</p>
           </div>
 
           {formError && (
@@ -78,12 +80,12 @@ const RegisterPage = () => {
 
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3" controlId="register-full-name">
-              <Form.Label>Полное имя</Form.Label>
+              <Form.Label>{t('auth.fullName')}</Form.Label>
               <Form.Control
                 type="text"
                 value={fullName}
                 onChange={(event) => setFullName(event.target.value)}
-                placeholder="Ваше имя"
+                placeholder={t('auth.fullNamePlaceholder')}
                 autoComplete="name"
                 required
               />
@@ -103,10 +105,10 @@ const RegisterPage = () => {
 
             <PasswordField
               controlId="register-password"
-              label="Пароль"
+              label={t('auth.password')}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="Минимум 6 символов"
+              placeholder={t('auth.minPassword')}
               autoComplete="new-password"
               minLength={6}
               required
@@ -114,10 +116,10 @@ const RegisterPage = () => {
 
             <PasswordField
               controlId="register-confirm-password"
-              label="Подтвердите пароль"
+              label={t('auth.confirmPassword')}
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
-              placeholder="Повторите пароль"
+              placeholder={t('auth.repeatPassword')}
               autoComplete="new-password"
               minLength={6}
               required
@@ -128,17 +130,17 @@ const RegisterPage = () => {
               {isSubmitting ? (
                 <>
                   <Spinner animation="border" size="sm" className="me-2" />
-                  Регистрация...
+                  {t('auth.registerLoading')}
                 </>
               ) : (
-                'Зарегистрироваться'
+                t('auth.register')
               )}
             </Button>
           </Form>
 
           <div className="text-center mt-4">
             <Link to="/login" className="text-decoration-none">
-              Уже есть аккаунт? Войти
+              {t('auth.registerHasAccount')}
             </Link>
           </div>
         </Card.Body>

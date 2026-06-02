@@ -7,6 +7,7 @@ const ConfirmDialog = ({
   confirmLabel = 'Подтвердить',
   cancelLabel = 'Отмена',
   variant = 'danger',
+  confirmDisabled = false,
   onConfirm,
   onCancel,
 }) => (
@@ -16,8 +17,8 @@ const ConfirmDialog = ({
     </Modal.Header>
     {message && <Modal.Body>{message}</Modal.Body>}
     <Modal.Footer>
-      <Button variant="secondary" onClick={onCancel}>{cancelLabel}</Button>
-      <Button variant={variant} onClick={onConfirm}>{confirmLabel}</Button>
+      <Button variant="secondary" onClick={onCancel} disabled={confirmDisabled}>{cancelLabel}</Button>
+      <Button variant={variant} onClick={onConfirm} disabled={confirmDisabled}>{confirmLabel}</Button>
     </Modal.Footer>
   </Modal>
 );
