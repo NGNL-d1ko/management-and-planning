@@ -15,5 +15,12 @@
   "nsis": {
     "oneClick": false,
     "allowToChangeInstallationDirectory": true
-  }
+  },
+  "scripts": {
+    "postinstall": "install-app-deps",
+    "start": "npm install && electron .",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
 }
